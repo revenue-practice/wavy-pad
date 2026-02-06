@@ -1,0 +1,37 @@
+{
+    "name": "wavy-pad",
+    "version": "1.0.0",
+    "description": "Notes Application",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/week1/day4/server.js",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "lint": "eslint .",
+        "format": "prettier . --write",
+        "typecheck": "tsc -p . --noEmit"
+    },
+    "keywords": [],
+    "author": "Developer Riyansh",
+    "license": "ISC",
+    "packageManager": "pnpm@10.28.0",
+    "devDependencies": {
+        "@eslint/js": "^9.39.2",
+        "@types/express": "^5.0.6",
+        "@types/node": "^25.2.1",
+        "@types/supertest": "^6.0.3",
+        "@vitest/coverage-v8": "^4.0.18",
+        "dotenv": "^17.2.4",
+        "eslint": "^9.39.2",
+        "express": "^5.2.1",
+        "fs": "0.0.1-security",
+        "prettier": "^3.8.1",
+        "supertest": "^7.2.2",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.54.0",
+        "vitest": "^4.0.18"
+    }
+}

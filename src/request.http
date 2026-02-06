@@ -1,0 +1,32 @@
+# HEALTH API
+curl --location 'http://localhost:3000/health'
+
+# POST NOTES
+curl --location 'http://localhost:3000/notes' \
+--header 'Content-Type: application/json' \
+--data '{
+    "title": "Physical Discipline",
+    "body": "Total abstinence from sexual feelings"
+}'
+
+# FETCH NOTES VIA ID
+curl --location 'http://localhost:3000/notes/:id' \
+--header 'Content-Type: application/json' \
+--data ''
+
+# FETCH NOTES
+curl --location 'http://localhost:3000/notes?limit=20&offset=0' \
+--header 'Content-Type: application/json'
+
+# UPDATE NOTES
+curl --location --request PUT 'http://localhost:3000/notes/ ' \
+--header 'Content-Type: application/json' \
+--data '{
+    "title": "Physical Discipline",
+    "body": "Total abstinence from sexual feelings"
+}'
+
+# DELETE NOTES
+curl --location --request DELETE 'http://localhost:3000/notes/:id' \
+--header 'Content-Type: application/json' \
+--data ''
