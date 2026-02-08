@@ -8,11 +8,11 @@ import {
     validateNotePagination,
 } from "./validate";
 import {
-    deleteNote,
-    fetchNotes,
-    fetchNotesById,
-    storeNotes,
-    updateNotes,
+    remove,
+    list,
+    get,
+    create,
+    update,
 } from "./store";
 
 export const router = express.Router();
@@ -24,7 +24,7 @@ router.post(
     (req: Request, res: Response) => {
         const title: string = req.body.title,
             body: string = req.body.body;
-        const response: NoteResult = storeNotes(title, body);
+        const response: NoteResult = create(title, body);
         return res.status(201).json(response);
     },
 );
@@ -34,7 +34,7 @@ router.get(
     validateNoteId,
     (req: Request, res: Response) => {
         const id: string = req.noteId;
-        const response: NoteResult = fetchNotesById(id);
+        const response: NoteResult = get(id);
 
         return res.status(200).json(response);
     },
@@ -47,7 +47,7 @@ router.get(
         const limit: number = req.pagination!.limit,
             offset: number = req.pagination!.offset;
 
-        const response: NotesDetailedResult = fetchNotes(limit, offset);
+        const response: NotesDetailedResult = list(limit, offset);
         return res.status(200).json(response);
     },
 );
@@ -62,7 +62,7 @@ router.put(
             title: string = req.body.title,
             body = req.body.body;
 
-        const response: NoteResult = updateNotes(title, body, id);
+        const response: NoteResult = update(title, body, id);
         return res.status(200).json(response);
     },
 );
@@ -73,7 +73,7 @@ router.delete(
     (req: Request, res: Response) => {
         const id: string = req.noteId;
 
-        deleteNote(id);
+        remove(id);
         return res.status(204).send();
     },
 );

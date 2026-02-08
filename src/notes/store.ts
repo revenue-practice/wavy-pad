@@ -5,7 +5,7 @@ import { NotFoundError } from "../middleware/errors";
 
 let notes = new Map<string, Note>();
 
-export const storeNotes = (title: string, body: string): NoteResult => {
+export const create = (title: string, body: string): NoteResult => {
     const id: string = randomUUID();
     const note: Note = {
         title: title,
@@ -18,14 +18,14 @@ export const storeNotes = (title: string, body: string): NoteResult => {
     return { id: id, ...note };
 };
 
-export const fetchNotesById = (id: string): NoteResult => {
+export const get = (id: string): NoteResult => {
     const response: Note | undefined = notes.get(id);
     if (Helper.isEitherNullOrUndefined(response)) throw new NotFoundError();
 
     return { id: id, ...response };
 };
 
-export const fetchNotes = (
+export const list = (
     limit: number,
     offset: number,
 ): NotesDetailedResult => {
@@ -43,7 +43,7 @@ export const fetchNotes = (
     };
 };
 
-export const updateNotes = (
+export const update = (
     title: string,
     body: string,
     id: string,
@@ -62,7 +62,7 @@ export const updateNotes = (
     return note;
 };
 
-export const deleteNote = (id: string): boolean => {
+export const remove = (id: string): boolean => {
     if (!notes.has(id)) throw new NotFoundError();
 
     notes.delete(id);

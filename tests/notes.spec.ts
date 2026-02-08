@@ -1,13 +1,13 @@
 import { mockNonExistentId, mockNoteParams, mockNotes } from "./mock-data";
 import { it, expect, vi, beforeEach, describe, afterEach } from "vitest";
 import {
-    storeNotes,
-    fetchNotesById,
+    create,
+    get,
     __seedNotes,
     __getNotesUnsafe,
-    fetchNotes,
-    updateNotes,
-    deleteNote,
+    list,
+    update,
+    remove,
 } from "../src/notes/store";
 import { NotFoundError } from "../src/middleware/errors";
 
@@ -25,7 +25,7 @@ describe("Post notes", () => {
     });
 
     it("inserts a new note", () => {
-        const response = storeNotes(mockNoteParams.title, mockNoteParams.body);
+        const response = create(mockNoteParams.title, mockNoteParams.body);
 
         const notes = __getNotesUnsafe();
 
@@ -55,13 +55,13 @@ describe("Fetch note via id", () => {
     });
 
     it("throws for non-existent note", () => {
-        expect(() => fetchNotesById(mockNonExistentId)).toThrow(NotFoundError);
+        expect(() => get(mockNonExistentId)).toThrow(NotFoundError);
     });
 
     it("fetches an existing note", () => {
         const existingId = mockNotes[0].id;
 
-        const response = fetchNotesById(existingId);
+        const response = get(existingId);
 
         expect(response).toMatchObject({
             id: existingId,
@@ -77,7 +77,7 @@ describe("Fetch notes", () => {
     });
 
     it("returns notes with limit and offset", () => {
-        const response = fetchNotes(1, 1);
+        const response = list(1, 1);
 
         expect(response).toStrictEqual({
             items: [mockNotes[1]],
@@ -103,14 +103,14 @@ describe("Update notes", () => {
 
     it("throws error for non-existent note", () => {
         expect(() =>
-            updateNotes("New title", "New body", mockNonExistentId),
+            update("New title", "New body", mockNonExistentId),
         ).toThrow(NotFoundError);
     });
 
     it("updates an existing note", () => {
         const id = mockNotes[2].id;
 
-        const response = updateNotes("Updated title", "Updated body", id);
+        const response = update("Updated title", "Updated body", id);
 
         const notes = __getNotesUnsafe();
         const updated = notes.find((n) => n.id === id);
@@ -136,7 +136,7 @@ describe("Delete notes", () => {
     it("deletes an existing note", () => {
         const id = mockNotes[2].id;
 
-        const response = deleteNote(id);
+        const response = remove(id);
 
         const notes = __getNotesUnsafe();
 
