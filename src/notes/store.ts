@@ -25,10 +25,7 @@ export const get = (id: string): NoteResult => {
     return { id: id, ...response };
 };
 
-export const list = (
-    limit: number,
-    offset: number,
-): NotesDetailedResult => {
+export const list = (limit: number, offset: number): NotesDetailedResult => {
     if (!notes.size) throw new NotFoundError();
 
     const all = Array.from(notes.entries()).map(([id, n]) => ({ id, ...n }));
@@ -43,11 +40,7 @@ export const list = (
     };
 };
 
-export const update = (
-    title: string,
-    body: string,
-    id: string,
-): NoteResult => {
+export const update = (title: string, body: string, id: string): NoteResult => {
     if (!notes.has(id)) throw new NotFoundError();
 
     const note: NoteResult = {

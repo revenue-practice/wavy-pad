@@ -1,5 +1,7 @@
+import { NotesError } from "../notes/errors";
 import { Constants } from "./constants";
 import { NullOrUndefined } from "./types";
+import { promises as fs } from "node:fs";
 
 export class Helper {
     public static isNull(prop: unknown): prop is null {
@@ -69,5 +71,35 @@ export class Helper {
             (minLength === undefined || (prop as string).length >= minLength) &&
             (maxLength === undefined || (prop as string).length <= maxLength)
         );
+    }
+
+    public static async checkIfFileExists(prop: string): Promise<boolean> {
+        try {
+            await fs.access(prop, fs.constants.F_OK);
+        } catch (error) {
+            const message: string =
+                error instanceof Error
+                    ? error.message
+                    : NotesError.fileDoNotExists;
+            console.error(message);
+            return false;
+        }
+
+        return true;
+    }
+
+    public static isEntityParsable(prop: unknown): boolean {
+        try {
+            if (JSON.parse(prop as string)) {
+            } // eslint-disable-line
+        } catch (error) {
+            const message: string =
+                error instanceof Error
+                    ? error.message
+                    : NotesError.fileDoNotExists;
+            console.error(message);
+            return false;
+        }
+        return true;
     }
 }
