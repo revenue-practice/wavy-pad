@@ -10,6 +10,24 @@ import { InternalError, NotFoundError } from "../middleware/errors";
 class NotesRepo implements INotesRepo {
     private isNotesInitialised: boolean = false;
     private notes: Map<string, Note> = new Map<string, Note>();
+    private writeLock: Promise<void> = Promise.resolve();
+    private async doAtomicWrite(content: NoteResult[]) {
+        await fs.writeFile(
+            NotesConstants.tempFilePath,
+            JSON.stringify(content, null, 2),
+            NotesConstants.fileEncoding,
+        );
+        await fs.rename(NotesConstants.tempFilePath, NotesConstants.filePath);
+    }
+
+    private persist(content: NoteResult[]): Promise<void> {
+        const run = async () => {
+            await this.doAtomicWrite(content);
+        };
+        this.writeLock = this.writeLock.then(run, run);
+
+        return this.writeLock;
+    }
 
     async init(): Promise<void> {
         await fs.mkdir(NotesConstants.folderPath, { recursive: true }); // make directory
@@ -61,7 +79,7 @@ class NotesRepo implements INotesRepo {
         );
         content.push({ id, ...note });
 
-        await Helper.writeContentInFile(content);
+        await this.persist(content);
 
         this.notes.set(id, note);
         return { id: id, ...note };
@@ -98,7 +116,6 @@ class NotesRepo implements INotesRepo {
 
     async update(title: string, body: string, id: string): Promise<NoteResult> {
         this.assertInit();
-
         if (!this.notes.has(id)) throw new NotFoundError();
 
         const note: NoteResult = {
@@ -109,23 +126,17 @@ class NotesRepo implements INotesRepo {
             updatedAt: new Date().toISOString(),
         };
         this.notes.set(id, note);
-
-        await Helper.writeContentInFile(
-            Helper.fetchMapContentInFileFormat(this.notes),
-        );
+        await this.persist(Helper.fetchMapContentInFileFormat(this.notes));
 
         return note;
     }
 
     async remove(id: string): Promise<boolean> {
         this.assertInit();
-
         if (!this.notes.has(id)) throw new NotFoundError();
-        this.notes.delete(id);
 
-        await Helper.writeContentInFile(
-            Helper.fetchMapContentInFileFormat(this.notes),
-        );
+        this.notes.delete(id);
+        await this.persist(Helper.fetchMapContentInFileFormat(this.notes));
 
         return true;
     }

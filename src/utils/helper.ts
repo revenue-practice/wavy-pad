@@ -144,27 +144,4 @@ export class Helper {
             throw new Error(NotesError.invalidContentInDB);
         return parsedString;
     }
-
-    public static async writeContentInFile(
-        content: NoteResult[],
-    ): Promise<void> {
-        try {
-            await fs.writeFile(
-                NotesConstants.tempFilePath,
-                JSON.stringify(content, null, 2),
-                NotesConstants.fileEncoding,
-            );
-            await fs.rename(
-                NotesConstants.tempFilePath,
-                NotesConstants.filePath,
-            );
-        } catch (error) {
-            const message: string = this.fetchErrorMessage(
-                error,
-                NotesError.fileWriteOperationFailure,
-            );
-            console.error(message);
-            throw new Error(message);
-        }
-    }
 }
