@@ -84,6 +84,10 @@ export const errorHandler = (
         return res.status(error.statusCode).json(error.formatErrors());
     }
 
+    if (error instanceof Error) {
+        return res.status(500).json(error);
+    }
+
     return res.status(500).json({
         message: ErrorConstants.genericInternalServerErrorFallback,
     });

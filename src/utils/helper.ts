@@ -1,4 +1,6 @@
+import { NotesConstants } from "../notes/constants";
 import { NotesError } from "../notes/errors";
+import { Note, NoteResult } from "../notes/types";
 import { Constants } from "./constants";
 import { NullOrUndefined } from "./types";
 import { promises as fs } from "node:fs";
@@ -61,6 +63,10 @@ export class Helper {
         return Number(prop);
     }
 
+    public static isEmptyString(prop: unknown): prop is string {
+        return this.isString(prop) && prop.trim() === "";
+    }
+
     public static isValidString(
         prop: unknown,
         minLength?: number,
@@ -73,15 +79,15 @@ export class Helper {
         );
     }
 
+    public static fetchErrorMessage(error: unknown, fallback: string): string {
+        return error instanceof Error ? error.message : fallback;
+    }
+
+    /* eslint-disable */
     public static async checkIfFileExists(prop: string): Promise<boolean> {
         try {
             await fs.access(prop, fs.constants.F_OK);
         } catch (error) {
-            const message: string =
-                error instanceof Error
-                    ? error.message
-                    : NotesError.fileDoNotExists;
-            console.error(message);
             return false;
         }
 
@@ -91,15 +97,74 @@ export class Helper {
     public static isEntityParsable(prop: unknown): boolean {
         try {
             if (JSON.parse(prop as string)) {
-            } // eslint-disable-line
+            }
         } catch (error) {
-            const message: string =
-                error instanceof Error
-                    ? error.message
-                    : NotesError.fileDoNotExists;
+            const message: string = this.fetchErrorMessage(
+                error,
+                NotesError.fileDoNotExists,
+            );
             console.error(message);
             return false;
         }
         return true;
+    }
+
+    /* eslint-enable */
+    public static fetchMapContentInFileFormat(
+        notes: Map<string, Note>,
+    ): NoteResult[] {
+        const result: NoteResult[] = [];
+        for (const [key, value] of notes) {
+            const note = {
+                id: key,
+                title: value.title,
+                body: value.body,
+                createdAt: value.createdAt,
+                updatedAt: value.updatedAt,
+            };
+
+            result.push(note);
+        }
+
+        return result;
+    }
+
+    public static async fetchFileContent(): Promise<NoteResult[]> {
+        const response = await fs.readFile(
+            NotesConstants.filePath,
+            NotesConstants.fileEncoding,
+        );
+        if (!this.isEntityParsable(response))
+            throw new Error(NotesError.notesFileInitialisationFailure);
+
+        const fileContent: string = response as unknown as string;
+        const parsedString: NoteResult[] = JSON.parse(fileContent);
+
+        if (!Array.isArray(parsedString))
+            throw new Error(NotesError.invalidContentInDB);
+        return parsedString;
+    }
+
+    public static async writeContentInFile(
+        content: NoteResult[],
+    ): Promise<void> {
+        try {
+            await fs.writeFile(
+                NotesConstants.tempFilePath,
+                JSON.stringify(content, null, 2),
+                NotesConstants.fileEncoding,
+            );
+            await fs.rename(
+                NotesConstants.tempFilePath,
+                NotesConstants.filePath,
+            );
+        } catch (error) {
+            const message: string = this.fetchErrorMessage(
+                error,
+                NotesError.fileWriteOperationFailure,
+            );
+            console.error(message);
+            throw new Error(message);
+        }
     }
 }
