@@ -8,6 +8,7 @@ import {
     validateNotePagination,
 } from "./validate";
 import { notesRepo } from "./service";
+import { Constants } from "../utils/constants";
 
 export const router = express.Router();
 
@@ -19,7 +20,7 @@ router.post(
         const title: string = req.body.title,
             body: string = req.body.body;
         const response: NoteResult = await notesRepo.create(title, body);
-        return res.status(201).json(response);
+        return res.status(Constants.STATUS_CODES[201]).json(response);
     },
 );
 
@@ -30,7 +31,7 @@ router.get(
         const id: string = req.noteId;
         const response: NoteResult = await notesRepo.get(id);
 
-        return res.status(200).json(response);
+        return res.status(Constants.STATUS_CODES[200]).json(response);
     },
 );
 
@@ -45,7 +46,7 @@ router.get(
             limit,
             offset,
         );
-        return res.status(200).json(response);
+        return res.status(Constants.STATUS_CODES[200]).json(response);
     },
 );
 
@@ -60,7 +61,7 @@ router.put(
             body = req.body.body;
 
         const response: NoteResult = await notesRepo.update(title, body, id);
-        return res.status(200).json(response);
+        return res.status(Constants.STATUS_CODES[200]).json(response);
     },
 );
 

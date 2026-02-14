@@ -79,9 +79,9 @@ class NotesRepo implements INotesRepo {
         );
         content.push({ id, ...note });
 
+        this.notes.set(id, note);
         await this.persist(content);
 
-        this.notes.set(id, note);
         return { id: id, ...note };
     }
 

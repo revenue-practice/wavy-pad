@@ -3,4 +3,12 @@ export class Constants {
     public static string: string = "string";
     public static boolean: string = "boolean";
     public static object: string = "object";
+    public static STATUS_CODES = {
+        200: 200,
+        201: 201,
+        202: 202,
+        400: 400,
+        404: 404,
+        500: 500,
+    };
 }
