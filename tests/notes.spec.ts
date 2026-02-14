@@ -35,6 +35,7 @@ describe("POST: /notes [Insert data [note_1] queue test]", () => {
     afterEach(async () => {
         await fs.rm(tempDir, { recursive: true, force: true });
         delete process.env.FOLDER_PATH;
+        vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
@@ -61,6 +62,7 @@ describe("POST: /notes [Insert data [note_2] queue test]", () => {
     afterEach(async () => {
         await fs.rm(tempDir, { recursive: true, force: true });
         delete process.env.FOLDER_PATH;
+        vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
@@ -87,6 +89,7 @@ describe("POST: /notes [create]", () => {
     afterEach(async () => {
         await fs.rm(tempDir, { recursive: true, force: true });
         delete process.env.FOLDER_PATH;
+        vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
@@ -192,6 +195,7 @@ describe("POST: /notes [Insert data [note_3] concurrency test]", () => {
     afterEach(async () => {
         await fs.rm(tempDir, { recursive: true, force: true });
         delete process.env.FOLDER_PATH;
+        vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
@@ -219,6 +223,7 @@ describe("POST: /notes [Insert data [note_4] concurrency test]", () => {
     afterEach(async () => {
         await fs.rm(tempDir, { recursive: true, force: true });
         delete process.env.FOLDER_PATH;
+        vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
