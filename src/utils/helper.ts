@@ -129,16 +129,17 @@ export class Helper {
         return result;
     }
 
-    public static async fetchFileContent(): Promise<NoteResult[]> {
+    public static async fetchFileContent<T>(filePath?: string): Promise<T[]> {
         const response = await fs.readFile(
-            NotesConstants.filePath,
+            filePath ?? NotesConstants.filePath,
             NotesConstants.fileEncoding,
         );
+
         if (!this.isEntityParsable(response))
             throw new Error(NotesError.notesFileInitialisationFailure);
 
         const fileContent: string = response as unknown as string;
-        const parsedString: NoteResult[] = JSON.parse(fileContent);
+        const parsedString: T[] = JSON.parse(fileContent);
 
         if (!Array.isArray(parsedString))
             throw new Error(NotesError.invalidContentInDB);
