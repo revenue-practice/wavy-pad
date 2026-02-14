@@ -1,4 +1,5 @@
 import { NotesError } from "../notes/errors";
+import { Constants } from "../utils/constants";
 import { Helper } from "../utils/helper";
 import { ErrorConstants } from "./errors.constants";
 import { CustomErrorStructure } from "./types";
@@ -20,7 +21,7 @@ export class ValidationError extends CustomError {
         Object.setPrototypeOf(this, ValidationError.prototype);
     }
 
-    statusCode = 400;
+    statusCode = Constants.STATUS_CODES[400];
     formatErrors(): CustomErrorStructure[] {
         return this.errors.map((err: CustomErrorStructure) => {
             return { message: err.message, field: err.field };
@@ -46,7 +47,7 @@ export class NotFoundError extends CustomError {
         Object.setPrototypeOf(this, NotFoundError.prototype);
     }
 
-    statusCode = 404;
+    statusCode = Constants.STATUS_CODES[404];
     formatErrors() {
         return [{ message: ErrorConstants.notFound }];
     }
@@ -58,7 +59,7 @@ export class InternalError extends CustomError {
         Object.setPrototypeOf(this, InternalError.prototype);
     }
 
-    statusCode = 500;
+    statusCode = Constants.STATUS_CODES[500];
     formatErrors(): CustomErrorStructure[] {
         return [{ message: ErrorConstants.internalServerError }];
     }
@@ -75,7 +76,7 @@ export const errorHandler = (
         !Helper.isNull(error) &&
         NotesError.body in error
     ) {
-        return res.status(400).json({
+        return res.status(Constants.STATUS_CODES[400]).json({
             message: ErrorConstants.invalidJson,
         });
     }
@@ -84,7 +85,11 @@ export const errorHandler = (
         return res.status(error.statusCode).json(error.formatErrors());
     }
 
-    return res.status(500).json({
+    if (error instanceof Error) {
+        return res.status(Constants.STATUS_CODES[500]).json(error);
+    }
+
+    return res.status(Constants.STATUS_CODES[500]).json({
         message: ErrorConstants.genericInternalServerErrorFallback,
     });
 };

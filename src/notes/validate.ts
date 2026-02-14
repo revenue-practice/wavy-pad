@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { RequestHandlerParams } from "../utils/types";
 import { Helper } from "../utils/helper";
 import { NotesError } from "./errors";
-import { NoteRequest } from "./types";
 import { ValidationError } from "../middleware/errors";
 
 export const validateNoteId: RequestHandlerParams = (
@@ -50,6 +49,11 @@ export const validateNoteBody: RequestHandlerParams = (
             { message: NotesError.invalidBodyLength, field: NotesError.body },
         ]);
 
+    req.body = {
+        title: title,
+        body: body,
+    };
+
     next();
 };
 
@@ -59,7 +63,7 @@ export const validateNote: RequestHandlerParams = (
     next: NextFunction,
 ) => {
     const { title, body } = req.body;
-    (req as unknown as NoteRequest).body = {
+    req.body = {
         title: title,
         body: body,
     };

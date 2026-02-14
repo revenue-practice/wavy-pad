@@ -1,0 +1,32 @@
+# HEALTH API
+curl --location 'http://localhost:3000/health'
+
+# POST NOTES
+curl --location 'http://localhost:3000/notes' \
+--header 'Content-Type: application/json' \
+--data '{
+    "title": "Legend",
+    "body": "Distribute contributions"
+}'
+
+# FETCH NOTES VIA ID
+curl --location 'http://localhost:3000/notes/5cb10a30-f55a-4dcd-a163-7a0a0e5bd040' \
+--header 'Content-Type: application/json' \
+--data ''
+
+# FETCH NOTES
+curl --location 'http://localhost:3000/notes?limit=5&offset=1' \
+--header 'Content-Type: application/json'
+
+# UPDATE NOTES
+curl --location --request PUT 'http://localhost:3000/notes/8aba078f-5d5a-461b-b51f-881c64f086cf' \
+--header 'Content-Type: application/json' \
+--data '{
+    "title": "Ultra Fixture",
+    "body": "Distribute contributions"
+}'
+
+# DELETE NOTES
+curl --location --request DELETE 'http://localhost:3000/notes/8461a93d-1cbb-43e5-beb8-a4cac44d1a17' \
+--header 'Content-Type: application/json' \
+--data ''
