@@ -7,13 +7,8 @@ import {
     validateNoteId,
     validateNotePagination,
 } from "./validate";
-import {
-    deleteNote,
-    fetchNotes,
-    fetchNotesById,
-    storeNotes,
-    updateNotes,
-} from "./store";
+import { notesRepo } from "./service";
+import { Constants } from "../utils/constants";
 
 export const router = express.Router();
 
@@ -21,34 +16,37 @@ router.post(
     NotesRoutes.getDefaultRoute(),
     validateNoteBody,
     validateNote,
-    (req: Request, res: Response) => {
+    async (req: Request, res: Response) => {
         const title: string = req.body.title,
             body: string = req.body.body;
-        const response: NoteResult = storeNotes(title, body);
-        return res.status(201).json(response);
+        const response: NoteResult = await notesRepo.create(title, body);
+        return res.status(Constants.STATUS_CODES[201]).json(response);
     },
 );
 
 router.get(
     NotesRoutes.getID(),
     validateNoteId,
-    (req: Request, res: Response) => {
+    async (req: Request, res: Response) => {
         const id: string = req.noteId;
-        const response: NoteResult = fetchNotesById(id);
+        const response: NoteResult = await notesRepo.get(id);
 
-        return res.status(200).json(response);
+        return res.status(Constants.STATUS_CODES[200]).json(response);
     },
 );
 
 router.get(
     NotesRoutes.getDefaultRoute(),
     validateNotePagination,
-    (req: Request, res: Response) => {
+    async (req: Request, res: Response) => {
         const limit: number = req.pagination!.limit,
             offset: number = req.pagination!.offset;
 
-        const response: NotesDetailedResult = fetchNotes(limit, offset);
-        return res.status(200).json(response);
+        const response: NotesDetailedResult = await notesRepo.list(
+            limit,
+            offset,
+        );
+        return res.status(Constants.STATUS_CODES[200]).json(response);
     },
 );
 
@@ -57,23 +55,23 @@ router.put(
     validateNoteId,
     validateNoteBody,
     validateNote,
-    (req: Request, res: Response) => {
+    async (req: Request, res: Response) => {
         const id: string = req.noteId,
             title: string = req.body.title,
             body = req.body.body;
 
-        const response: NoteResult = updateNotes(title, body, id);
-        return res.status(200).json(response);
+        const response: NoteResult = await notesRepo.update(title, body, id);
+        return res.status(Constants.STATUS_CODES[200]).json(response);
     },
 );
 
 router.delete(
     NotesRoutes.getID(),
     validateNoteId,
-    (req: Request, res: Response) => {
+    async (req: Request, res: Response) => {
         const id: string = req.noteId;
 
-        deleteNote(id);
+        await notesRepo.remove(id);
         return res.status(204).send();
     },
 );

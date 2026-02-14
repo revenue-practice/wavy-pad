@@ -1,8 +1,15 @@
+import "dotenv/config";
 import { createApp } from "./app";
 import { Config } from "./config";
+import { initiateDB } from "./db";
 
-const server = createApp();
+async function main() {
+    await initiateDB();
 
-server.listen(Config.getPort(), () => {
-    console.log(`Server is listening on PORT ${Config.getPort()}`);
-});
+    const app = createApp();
+    app.listen(Config.getPort(), () => {
+        console.log(`Server listening on ${Config.getPort()}`);
+    });
+}
+
+void main();

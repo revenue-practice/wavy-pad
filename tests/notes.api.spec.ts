@@ -1,100 +1,132 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import request from "supertest";
 import { createApp } from "../src/app";
+import { initiateDB } from "../src/db";
+
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import request from "supertest";
 import { NotesRoutes } from "../src/notes/routes.constants";
-import { mockNotes, mockResultResponseAtFetch } from "./mock-data";
 import { NotesError } from "../src/notes/errors";
 import { ErrorConstants } from "../src/middleware/errors.constants";
-import { __seedNotes } from "../src/notes/store";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import {
+    invalidJsonString,
+    lengthyBodyNote,
+    lengthyTitleNote,
+    missingBodyNote,
+    missingTitleNote,
+    mockNote1,
+    mockNote2,
+    mockNote3,
+    mockNote4,
+} from "./mock-data";
+import { Constants } from "../src/utils/constants";
 
-describe("Post notes validation", () => {
-    beforeEach(() => {
-        __seedNotes(mockNotes);
+const notesDataPath: string = "notes-data";
+const loggerFolderPath: string = "notes-logger";
+
+describe("POST: /notes [Insert data]", () => {
+    let tempDir: string, logTempDir: string;
+    let app: ReturnType<typeof createApp>;
+
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+        process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
+
+        app = createApp();
+        await initiateDB();
     });
 
-    const app = createApp();
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
 
-    it("Invalid JSON", async () => {
+    it("Success: Insert Data[note_1]", async () => {
+        const response = await request(app)
+            .post(NotesRoutes.getDefaultRoute())
+            .send(mockNote1);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toMatchObject(mockNote1);
+    });
+
+    it("Success: Insert Data[note_2]", async () => {
+        const response = await request(app)
+            .post(NotesRoutes.getDefaultRoute())
+            .send(mockNote2);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toMatchObject(mockNote2);
+    });
+
+    it("Success: Insert Data[note_3]", async () => {
+        const response = await request(app)
+            .post(NotesRoutes.getDefaultRoute())
+            .send(mockNote3);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toMatchObject(mockNote3);
+    });
+
+    it("Error: Invalid JSON", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
             .set("Content-Type", "application/json")
-            .send(
-                '{"title": "Physical Discipline", "body": "Total abstinence"',
-            ); // missing closing }
+            .send(invalidJsonString); // missing closing }
 
-        expect(response.statusCode).toStrictEqual(400);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.header["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual({ message: "Invalid Json" });
     });
 
-    it("Success validation", async () => {
+    it("Error: Missing title", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .send({
-                title: "Physical Discipline",
-                body: "Total abstinence from sexual feelings",
-            });
+            .send(missingTitleNote);
 
-        expect(response.statusCode).toStrictEqual(201);
-        expect(response.headers["x-request-id"]).toBeTruthy();
-        expect(response.body).toMatchObject({
-            title: "Physical Discipline",
-            body: "Total abstinence from sexual feelings",
-        });
-    });
-
-    it("Error for missing title", async () => {
-        const response = await request(app)
-            .post(NotesRoutes.getDefaultRoute())
-            .send({
-                body: "Total abstinence from sexual feelings",
-            });
-
-        expect(response.statusCode).toStrictEqual(400);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: NotesError.invalidTitleType, field: NotesError.title },
         ]);
     });
 
-    it("Error for title length > 80 characters", async () => {
+    it("Error: Missing body", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .send({
-                title: "This is a very long note title designed specifically to exceed the eighty character validation limit number 3",
-                body: "Total abstinence from sexual feelings",
-            });
+            .send(missingBodyNote);
 
-        expect(response.statusCode).toStrictEqual(400);
-        expect(response.headers["x-request-id"]).toBeTruthy();
-        expect(response.body).toStrictEqual([
-            { message: NotesError.invalidTitleLength, field: NotesError.title },
-        ]);
-    });
-
-    it("Error for missing body", async () => {
-        const response = await request(app)
-            .post(NotesRoutes.getDefaultRoute())
-            .send({
-                title: "Physical Discipline",
-            });
-
-        expect(response.statusCode).toStrictEqual(400);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: NotesError.invalidBodyType, field: NotesError.body },
         ]);
     });
 
-    it("Error for body length > 2000 characters", async () => {
+    it("Error: Title length > 80", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .send({
-                title: "This is a very long note title designed",
-                body: "Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for no Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note",
-            });
+            .send(lengthyTitleNote);
 
-        expect(response.statusCode).toStrictEqual(400);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toStrictEqual([
+            { message: NotesError.invalidTitleLength, field: NotesError.title },
+        ]);
+    });
+
+    it("Error: Body length > 2000", async () => {
+        const response = await request(app)
+            .post(NotesRoutes.getDefaultRoute())
+            .send(lengthyBodyNote);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: NotesError.invalidBodyLength, field: NotesError.body },
@@ -102,35 +134,31 @@ describe("Post notes validation", () => {
     });
 });
 
-describe("Fetch notes via id validation", () => {
-    const app = createApp();
+describe("GET: /:id [Fetch note via id]", () => {
+    let tempDir: string, logTempDir: string;
+    let app: ReturnType<typeof createApp>;
 
-    beforeEach(() => {
-        __seedNotes(mockNotes);
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+        process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
+
+        app = createApp();
+        await initiateDB();
     });
 
-    it("Success validation", async () => {
-        const response = await request(app)
-            .get(`${NotesRoutes.getDefaultRoute()}/note_1`)
-            .send({});
-
-        expect(response.status).toStrictEqual(200);
-        expect(response.headers["x-request-id"]).toBeTruthy();
-        expect(response.body).toStrictEqual({
-            id: "note_1",
-            title: "CI pipeline rules",
-            body: "All pull requests must pass lint, typecheck, tests, and build.",
-            createdAt: "2026-01-21T07:20:00.000Z",
-            updatedAt: "2026-01-21T07:20:00.000Z",
-        });
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
     });
 
-    it("Failure validation", async () => {
+    it("Error: Not Found", async () => {
         const response = await request(app)
-            .get(`${NotesRoutes.getDefaultRoute()}/123`)
+            .get(`${NotesRoutes.getDefaultRoute()}/note_4`)
             .send({});
 
-        expect(response.statusCode).toStrictEqual(404);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: ErrorConstants.notFound },
@@ -138,37 +166,64 @@ describe("Fetch notes via id validation", () => {
     });
 });
 
-describe("Fetch notes validation", () => {
-    const app = createApp();
+describe("GET: / [List Notes]", () => {
+    let tempDir: string, logTempDir: string;
+    let app: ReturnType<typeof createApp>;
 
-    beforeEach(() => {
-        __seedNotes(mockNotes);
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+        process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
+
+        app = createApp();
+        await initiateDB();
     });
 
-    it("Success validation", async () => {
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
+
+    it("Success: Fetch List", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}`)
             .send({});
 
-        expect(response.status).toStrictEqual(200);
+        expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
         expect(response.headers["x-request-id"]).toBeTruthy();
-        expect(response.body).toStrictEqual({
-            items: mockResultResponseAtFetch,
+        expect(response.body).toMatchObject({
+            items: [mockNote3, mockNote2, mockNote1],
             total: 3,
             limit: 20,
             offset: 0,
         });
     });
 
-    it("Success validation", async () => {
+    it("Success: Fetch List [Limit 1]", async () => {
+        const response = await request(app)
+            .get(`${NotesRoutes.getDefaultRoute()}?limit=1`)
+            .send({});
+
+        expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toMatchObject({
+            items: [mockNote3],
+            total: 3,
+            limit: 1,
+            offset: 0,
+        });
+    });
+
+    it("Success: Fetch List [Limit 1 Offset 1]", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}?limit=1&offset=1`)
             .send({});
 
-        expect(response.status).toStrictEqual(200);
+        expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
         expect(response.headers["x-request-id"]).toBeTruthy();
-        expect(response.body).toStrictEqual({
-            items: [mockResultResponseAtFetch[1]],
+        expect(response.body).toMatchObject({
+            items: [mockNote2],
             total: 3,
             limit: 1,
             offset: 1,
@@ -177,96 +232,78 @@ describe("Fetch notes validation", () => {
 });
 
 describe("Update notes validation", () => {
-    const app = createApp();
+    let tempDir: string, logTempDir: string;
+    let app: ReturnType<typeof createApp>;
 
-    beforeEach(() => {
-        __seedNotes(mockNotes);
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+        process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
+
+        app = createApp();
+        await initiateDB();
     });
 
-    it("Success validation", async () => {
-        const response = await request(app)
-            .put(`${NotesRoutes.getDefaultRoute()}/note_3`)
-            .send({
-                title: "Edge cases to test before release",
-                body: "Test empty inputs, long text, invalid IDs, and unexpected payloads.",
-            });
-
-        expect(response.status).toStrictEqual(200);
-        expect(response.headers["x-request-id"]).toBeTruthy();
-        expect(response.body).toMatchObject({
-            id: "note_3",
-            title: "Edge cases to test before release",
-            body: "Test empty inputs, long text, invalid IDs, and unexpected payloads.",
-        });
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
     });
 
-    it("Failure validation", async () => {
+    it("Error: Not Found", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/note_4`)
-            .send({
-                title: "Edge cases to test before release",
-                body: "Test empty inputs, long text, invalid IDs, and unexpected payloads.",
-            });
+            .send(mockNote4);
 
-        expect(response.statusCode).toStrictEqual(404);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: ErrorConstants.notFound },
         ]);
     });
 
-    it("Error for missing title", async () => {
+    it("Error: Missing title", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
-            .send({
-                body: "Total abstinence from sexual feelings",
-            });
+            .send(missingTitleNote);
 
-        expect(response.statusCode).toStrictEqual(400);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: NotesError.invalidTitleType, field: NotesError.title },
         ]);
     });
 
-    it("Error for title length > 80 characters", async () => {
+    it("Error: Missing body", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
-            .send({
-                title: "This is a very long note title designed specifically to exceed the eighty character validation limit number 3",
-                body: "Total abstinence from sexual feelings",
-            });
+            .send(missingBodyNote);
 
-        expect(response.statusCode).toStrictEqual(400);
-        expect(response.headers["x-request-id"]).toBeTruthy();
-        expect(response.body).toStrictEqual([
-            { message: NotesError.invalidTitleLength, field: NotesError.title },
-        ]);
-    });
-
-    it("Error for missing body", async () => {
-        const response = await request(app)
-            .put(`${NotesRoutes.getDefaultRoute()}/123`)
-            .send({
-                title: "Physical Discipline",
-            });
-
-        expect(response.statusCode).toStrictEqual(400);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: NotesError.invalidBodyType, field: NotesError.body },
         ]);
     });
 
-    it("Error for body length > 2000 characters", async () => {
+    it("Error: Title length > 80", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
-            .send({
-                title: "This is a very long note title designed",
-                body: "Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for no Body for note 25 Body for note 25 Body for note 25 Body for note 25 Body for note",
-            });
+            .send(lengthyTitleNote);
 
-        expect(response.statusCode).toStrictEqual(400);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toStrictEqual([
+            { message: NotesError.invalidTitleLength, field: NotesError.title },
+        ]);
+    });
+
+    it("Error: Body length > 2000", async () => {
+        const response = await request(app)
+            .put(`${NotesRoutes.getDefaultRoute()}/123`)
+            .send(lengthyBodyNote);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: NotesError.invalidBodyLength, field: NotesError.body },
@@ -275,19 +312,22 @@ describe("Update notes validation", () => {
 });
 
 describe("Delete notes validation", () => {
-    const app = createApp();
+    let tempDir: string, logTempDir: string;
+    let app: ReturnType<typeof createApp>;
 
-    beforeEach(() => {
-        __seedNotes(mockNotes);
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+        process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
+
+        app = createApp();
+        await initiateDB();
     });
 
-    it("Success validation", async () => {
-        const response = await request(app)
-            .delete(`${NotesRoutes.getDefaultRoute()}/note_1`)
-            .send({});
-
-        expect(response.statusCode).toStrictEqual(204);
-        expect(response.headers["x-request-id"]).toBeTruthy();
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
     });
 
     it("Failure validation", async () => {
@@ -295,7 +335,7 @@ describe("Delete notes validation", () => {
             .delete(`${NotesRoutes.getDefaultRoute()}/123`)
             .send({});
 
-        expect(response.statusCode).toStrictEqual(404);
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: ErrorConstants.notFound },
