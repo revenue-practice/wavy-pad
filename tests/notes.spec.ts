@@ -15,6 +15,7 @@ import { promises as fs } from "node:fs";
 
 const notesDataPath: string = "notes-data";
 const loggerFolderPath: string = "notes-logger";
+
 describe("POST: /notes [Insert data [note_1] queue test]", () => {
     let tempDir: string, logTempDir: string;
     const fixedTime = "2026-02-13T10:10:20.000Z";
@@ -73,7 +74,9 @@ describe("POST: /notes [create]", () => {
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         await initiateDB();
 
@@ -106,7 +109,9 @@ describe("GET: / [list]", () => {
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         await initiateDB();
     });
@@ -174,7 +179,9 @@ describe("POST: /notes [Insert data [note_3] concurrency test]", () => {
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         vi.useFakeTimers();
         vi.setSystemTime(new Date(fixedTime));
@@ -202,6 +209,10 @@ describe("POST: /notes [Insert data [note_4] concurrency test]", () => {
 
         process.env.FOLDER_PATH = tempDir;
         process.env.LOGGER_PATH = logTempDir;
+
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(fixedTime));
+
         await initiateDB();
     });
 
@@ -220,7 +231,9 @@ describe("GET: / [list]", () => {
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         await initiateDB();
     });
