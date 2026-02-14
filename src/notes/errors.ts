@@ -17,4 +17,5 @@ export class NotesError {
         "Notes Initialisation failed";
     public static invalidContentInDB = "Invalid content in Notes DB";
     public static fileDoNotExists = "File do not exists";
+    public static fileWriteOperationFailure = "Write operation in file failed";
 }

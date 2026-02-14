@@ -1,82 +1,144 @@
+import { randomUUID } from "node:crypto";
 import { Helper } from "../utils/helper";
 import { NotesConstants } from "./constants";
 import { NotesError } from "./errors";
 import { INotesRepo } from "./repo";
 import { Note, NoteResult, NotesDetailedResult } from "./types";
 import { promises as fs } from "node:fs";
+import { InternalError, NotFoundError } from "../middleware/errors";
 
 class NotesRepo implements INotesRepo {
     private isNotesInitialised: boolean = false;
     private notes: Map<string, Note> = new Map<string, Note>();
+    private writeLock: Promise<void> = Promise.resolve();
+    private async doAtomicWrite(content: NoteResult[]) {
+        await fs.writeFile(
+            NotesConstants.tempFilePath,
+            JSON.stringify(content, null, 2),
+            NotesConstants.fileEncoding,
+        );
+        await fs.rename(NotesConstants.tempFilePath, NotesConstants.filePath);
+    }
+
+    private persist(content: NoteResult[]): Promise<void> {
+        const run = async () => {
+            await this.doAtomicWrite(content);
+        };
+        this.writeLock = this.writeLock.then(run, run);
+
+        return this.writeLock;
+    }
 
     async init(): Promise<void> {
-        try {
-            await fs.mkdir(NotesConstants.folderPath, { recursive: true }); // make directory
-            const fileExists: boolean = await Helper.checkIfFileExists(
+        await fs.mkdir(NotesConstants.folderPath, { recursive: true }); // make directory
+        const fileExists: boolean = await Helper.checkIfFileExists(
+            NotesConstants.filePath,
+        );
+
+        if (!fileExists) {
+            await fs.writeFile(
                 NotesConstants.filePath,
+                JSON.stringify(NotesConstants.dummyNote, null, 2),
+                NotesConstants.fileEncoding,
             );
-
-            if (!fileExists) {
-                await fs.writeFile(
-                    NotesConstants.filePath,
-                    [],
-                    NotesConstants.fileEncoding,
-                );
-            } else {
-                const response = await fs.readFile(
-                    NotesConstants.filePath,
-                    NotesConstants.fileEncoding,
-                );
-                if (!Helper.isEntityParsable(response))
-                    throw new Error(NotesError.notesFileInitialisationFailure);
-
-                const fileContent: string = response as unknown as string;
-                const parsedString = JSON.parse(fileContent);
-
-                if (Array.isArray(parsedString)) {
-                    for (
-                        let index = 0;
-                        index < parsedString.length;
-                        index += 1
-                    ) {
-                        const obj: NoteResult = parsedString[index];
-                        const { id, ...note } = obj;
-                        this.notes.set(id, note);
-                    }
-
-                    console.log(this.notes);
-                    this.isNotesInitialised = true;
-                } else {
-                    throw new Error(NotesError.invalidContentInDB);
-                }
-            }
-        } catch (error) {
-            const message: string =
-                error instanceof Error
-                    ? error.message
-                    : NotesError.notesFileInitialisationFailure;
-            console.error(message);
         }
+        const parsedString: NoteResult[] = await Helper.fetchFileContent();
+
+        if (Array.isArray(parsedString)) {
+            for (let index = 0; index < parsedString.length; index += 1) {
+                if (Helper.isEitherNullOrUndefined(parsedString[index]))
+                    throw new Error(NotesError.invalidContentInDB);
+                const obj: NoteResult = parsedString[index]!;
+                const { id, ...note } = obj;
+                this.notes.set(id, note);
+            }
+        } else {
+            throw new Error(NotesError.invalidContentInDB);
+        }
+
+        this.isNotesInitialised = true;
     }
 
-    create(title: string, body: string): Promise<NoteResult> {
-        throw new Error("Method not implemented.");
+    async assertInit() {
+        if (!this.isNotesInitialised) throw new InternalError();
+        return this.isNotesInitialised;
     }
 
-    get(id: string): Promise<NoteResult> {
-        throw new Error("Method not implemented.");
+    async create(title: string, body: string): Promise<NoteResult> {
+        this.assertInit();
+
+        const id: string = randomUUID();
+        const note: Note = {
+            title: title,
+            body: body,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        const content: NoteResult[] = Helper.fetchMapContentInFileFormat(
+            this.notes,
+        );
+        content.push({ id, ...note });
+
+        await this.persist(content);
+
+        this.notes.set(id, note);
+        return { id: id, ...note };
     }
 
-    list(limit: number, offset: number): Promise<NotesDetailedResult> {
-        throw new Error("Method not implemented.");
+    async get(id: string): Promise<NoteResult> {
+        this.assertInit();
+
+        const response: Note | undefined = this.notes.get(id);
+        if (Helper.isEitherNullOrUndefined(response)) throw new NotFoundError();
+
+        return { id: id, ...response };
     }
 
-    update(title: string, body: string, id: string): Promise<NoteResult> {
-        throw new Error("Method not implemented.");
+    async list(limit: number, offset: number): Promise<NotesDetailedResult> {
+        this.assertInit();
+
+        if (!(this.notes.size - 1)) throw new NotFoundError();
+        const all = Array.from(this.notes.entries()).map(([id, n]) => ({
+            id,
+            ...n,
+        }));
+        all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        all.pop();
+        const items = all.slice(offset, offset + limit);
+
+        return {
+            items,
+            total: this.notes.size - 1,
+            limit: Math.min(limit, 50),
+            offset: offset,
+        };
     }
 
-    remove(id: string): Promise<boolean> {
-        throw new Error("Method not implemented.");
+    async update(title: string, body: string, id: string): Promise<NoteResult> {
+        this.assertInit();
+        if (!this.notes.has(id)) throw new NotFoundError();
+
+        const note: NoteResult = {
+            id: id,
+            title: title,
+            body: body,
+            createdAt: this.notes.get(id)!.createdAt,
+            updatedAt: new Date().toISOString(),
+        };
+        this.notes.set(id, note);
+        await this.persist(Helper.fetchMapContentInFileFormat(this.notes));
+
+        return note;
+    }
+
+    async remove(id: string): Promise<boolean> {
+        this.assertInit();
+        if (!this.notes.has(id)) throw new NotFoundError();
+
+        this.notes.delete(id);
+        await this.persist(Helper.fetchMapContentInFileFormat(this.notes));
+
+        return true;
     }
 }
 
