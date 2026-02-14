@@ -5,6 +5,8 @@ import {
     mockNote2,
     mockNote3,
     mockNote4,
+    mockNote5,
+    mockNote6,
     mockNoteParams,
 } from "./mock-data";
 import { NoteResult } from "../src/notes/types";
@@ -176,7 +178,7 @@ describe("GET: / [list]", () => {
     });
 });
 
-describe("POST: /notes [Insert data [note_3] concurrency test]", () => {
+describe("POST: /notes [Insert data notes concurrency test]", () => {
     let tempDir: string, logTempDir: string;
     const fixedTime = "2026-02-15T10:11:11.111Z";
 
@@ -200,34 +202,9 @@ describe("POST: /notes [Insert data [note_3] concurrency test]", () => {
 
     it("Success: Insert Data", async () => {
         await notesRepo.create(mockNote3.title, mockNote3.body);
-    });
-});
-
-describe("POST: /notes [Insert data [note_4] concurrency test]", () => {
-    let tempDir: string, logTempDir: string;
-    const fixedTime = "2026-02-15T10:11:11.111Z";
-
-    beforeEach(async () => {
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
-        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
-
-        process.env.FOLDER_PATH = tempDir;
-        process.env.LOGGER_PATH = logTempDir;
-
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date(fixedTime));
-
-        await initiateDB();
-    });
-
-    afterEach(async () => {
-        await fs.rm(tempDir, { recursive: true, force: true });
-        delete process.env.FOLDER_PATH;
-        vi.useRealTimers();
-    });
-
-    it("Success: Insert Data", async () => {
         await notesRepo.create(mockNote4.title, mockNote4.body);
+        await notesRepo.create(mockNote5.title, mockNote5.body);
+        await notesRepo.create(mockNote6.title, mockNote6.body);
     });
 });
 
@@ -249,21 +226,41 @@ describe("GET: / [list]", () => {
     });
 
     it("Success: Concurrent Data", async () => {
-        const response = await notesRepo.list(2, 0);
+        const response = await notesRepo.list(10, 0);
 
-        expect(response).toMatchObject({
-            items: [
-                {
+        expect(response).toEqual({
+            items: expect.arrayContaining([
+                expect.objectContaining({
+                    title: mockNoteParams.title,
+                    body: mockNoteParams.body,
+                }),
+                expect.objectContaining({
+                    title: mockNote1.title,
+                    body: mockNote1.body,
+                }),
+                expect.objectContaining({
+                    title: mockNote2.title,
+                    body: mockNote2.body,
+                }),
+                expect.objectContaining({
                     title: mockNote3.title,
                     body: mockNote3.body,
-                },
-                {
+                }),
+                expect.objectContaining({
                     title: mockNote4.title,
                     body: mockNote4.body,
-                },
-            ],
-            total: 5,
-            limit: 2,
+                }),
+                expect.objectContaining({
+                    title: mockNote5.title,
+                    body: mockNote5.body,
+                }),
+                expect.objectContaining({
+                    title: mockNote6.title,
+                    body: mockNote6.body,
+                }),
+            ]),
+            total: 7,
+            limit: 10,
             offset: 0,
         });
     });

@@ -31,6 +31,16 @@ export const mockNote4 = {
     body: "Test empty inputs, long text, invalid IDs, and unexpected payloads.",
 };
 
+export const mockNote5 = {
+    title: "Random values",
+    body: "Checking random values.",
+};
+
+export const mockNote6 = {
+    title: "Physical Discipline",
+    body: "Total abstinence from sexual feelings.",
+};
+
 export const invalidJsonString: string =
     '{"title": "Physical Discipline", "body": "Total abstinence"';
 export const missingTitleNote = {
