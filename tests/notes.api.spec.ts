@@ -10,7 +10,6 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
-    dummyNote,
     invalidJsonString,
     lengthyBodyNote,
     lengthyTitleNote,
@@ -24,14 +23,17 @@ import {
 import { Constants } from "../src/utils/constants";
 
 const notesDataPath: string = "notes-data";
+const loggerFolderPath: string = "notes-logger";
 
 describe("POST: /notes [Insert data]", () => {
-    let tempDir: string;
+    let tempDir: string, logTempDir: string;
     let app: ReturnType<typeof createApp>;
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         app = createApp();
         await initiateDB();
@@ -133,12 +135,14 @@ describe("POST: /notes [Insert data]", () => {
 });
 
 describe("GET: /:id [Fetch note via id]", () => {
-    let tempDir: string;
+    let tempDir: string, logTempDir: string;
     let app: ReturnType<typeof createApp>;
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         app = createApp();
         await initiateDB();
@@ -147,16 +151,6 @@ describe("GET: /:id [Fetch note via id]", () => {
     afterEach(async () => {
         await fs.rm(tempDir, { recursive: true, force: true });
         delete process.env.FOLDER_PATH;
-    });
-
-    it("Success: Fetch Data[note_1]", async () => {
-        const response = await request(app)
-            .get(`${NotesRoutes.getDefaultRoute()}/AAA`)
-            .send({});
-
-        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[200]);
-        expect(response.headers["x-request-id"]).toBeTruthy();
-        expect(response.body).toStrictEqual(dummyNote);
     });
 
     it("Error: Not Found", async () => {
@@ -173,12 +167,14 @@ describe("GET: /:id [Fetch note via id]", () => {
 });
 
 describe("GET: / [List Notes]", () => {
-    let tempDir: string;
+    let tempDir: string, logTempDir: string;
     let app: ReturnType<typeof createApp>;
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         app = createApp();
         await initiateDB();
@@ -236,12 +232,14 @@ describe("GET: / [List Notes]", () => {
 });
 
 describe("Update notes validation", () => {
-    let tempDir: string;
+    let tempDir: string, logTempDir: string;
     let app: ReturnType<typeof createApp>;
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         app = createApp();
         await initiateDB();
@@ -314,12 +312,14 @@ describe("Update notes validation", () => {
 });
 
 describe("Delete notes validation", () => {
-    let tempDir: string;
+    let tempDir: string, logTempDir: string;
     let app: ReturnType<typeof createApp>;
 
     beforeEach(async () => {
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
         process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
 
         app = createApp();
         await initiateDB();

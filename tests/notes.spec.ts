@@ -1,0 +1,252 @@
+import { describe, beforeEach, afterEach, it, vi, expect } from "vitest";
+import { notesRepo } from "../src/notes/service";
+import {
+    mockNote1,
+    mockNote2,
+    mockNote3,
+    mockNote4,
+    mockNoteParams,
+} from "./mock-data";
+import { NoteResult } from "../src/notes/types";
+import { initiateDB } from "../src/db";
+import path from "node:path";
+import os from "node:os";
+import { promises as fs } from "node:fs";
+
+const notesDataPath: string = "notes-data";
+const loggerFolderPath: string = "notes-logger";
+describe("POST: /notes [Insert data [note_1] queue test]", () => {
+    let tempDir: string, logTempDir: string;
+    const fixedTime = "2026-02-13T10:10:20.000Z";
+
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(fixedTime));
+
+        process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
+        await initiateDB();
+    });
+
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
+
+    it("Success: Insert Data", async () => {
+        await notesRepo.create(mockNote1.title, mockNote1.body);
+    });
+});
+
+describe("POST: /notes [Insert data [note_2] queue test]", () => {
+    let tempDir: string, logTempDir: string;
+    const fixedTime = "2026-02-13T10:12:20.000Z";
+
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(fixedTime));
+
+        process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
+        await initiateDB();
+    });
+
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
+
+    it("Success: Insert Data", async () => {
+        await notesRepo.create(mockNote2.title, mockNote2.body);
+    });
+});
+
+describe("POST: /notes [create]", () => {
+    const fixedTime = "2026-02-01T02:12:20.000Z";
+    let tempDir: string, logTempDir: string;
+
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        process.env.FOLDER_PATH = tempDir;
+
+        await initiateDB();
+
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(fixedTime));
+    });
+
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
+
+    it("Success: Insert Data", async () => {
+        const response: NoteResult = await notesRepo.create(
+            mockNoteParams.title,
+            mockNoteParams.body,
+        );
+
+        expect(response).toMatchObject({
+            title: mockNoteParams.title,
+            body: mockNoteParams.body,
+            createdAt: fixedTime,
+            updatedAt: fixedTime,
+        });
+    });
+});
+
+describe("GET: / [list]", () => {
+    let tempDir: string, logTempDir: string;
+
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        process.env.FOLDER_PATH = tempDir;
+
+        await initiateDB();
+    });
+
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
+
+    it("Success: Empty List", async () => {
+        const response = await notesRepo.list(1, 3);
+
+        expect(response).toMatchObject({
+            items: [],
+            total: 3,
+            limit: 1,
+            offset: 3,
+        });
+    });
+
+    it("Success: Data in List", async () => {
+        const response = await notesRepo.list(5, 2);
+
+        expect(response).toMatchObject({
+            items: [
+                {
+                    title: mockNoteParams.title,
+                    body: mockNoteParams.body,
+                },
+            ],
+            total: 3,
+            limit: 5,
+            offset: 2,
+        });
+    });
+
+    it("Success: Queue Data", async () => {
+        const response = await notesRepo.list(5, 0);
+
+        expect(response).toMatchObject({
+            items: [
+                {
+                    title: mockNote2.title,
+                    body: mockNote2.body,
+                },
+                {
+                    title: mockNote1.title,
+                    body: mockNote1.body,
+                },
+                {
+                    title: mockNoteParams.title,
+                    body: mockNoteParams.body,
+                },
+            ],
+            total: 3,
+            limit: 5,
+            offset: 0,
+        });
+    });
+});
+
+describe("POST: /notes [Insert data [note_3] concurrency test]", () => {
+    let tempDir: string, logTempDir: string;
+    const fixedTime = "2026-02-15T10:11:11.111Z";
+
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        process.env.FOLDER_PATH = tempDir;
+
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(fixedTime));
+
+        await initiateDB();
+    });
+
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
+
+    it("Success: Insert Data", async () => {
+        await notesRepo.create(mockNote3.title, mockNote3.body);
+    });
+});
+
+describe("POST: /notes [Insert data [note_4] concurrency test]", () => {
+    let tempDir: string, logTempDir: string;
+    const fixedTime = "2026-02-15T10:11:11.111Z";
+
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+
+        process.env.FOLDER_PATH = tempDir;
+        process.env.LOGGER_PATH = logTempDir;
+        await initiateDB();
+    });
+
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
+
+    it("Success: Insert Data", async () => {
+        await notesRepo.create(mockNote4.title, mockNote4.body);
+    });
+});
+
+describe("GET: / [list]", () => {
+    let tempDir: string, logTempDir: string;
+
+    beforeEach(async () => {
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
+        process.env.FOLDER_PATH = tempDir;
+
+        await initiateDB();
+    });
+
+    afterEach(async () => {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        delete process.env.FOLDER_PATH;
+    });
+
+    it("Success: Concurrent Data", async () => {
+        const response = await notesRepo.list(2, 0);
+
+        expect(response).toMatchObject({
+            items: [
+                {
+                    title: mockNote3.title,
+                    body: mockNote3.body,
+                },
+                {
+                    title: mockNote4.title,
+                    body: mockNote4.body,
+                },
+            ],
+            total: 5,
+            limit: 2,
+            offset: 0,
+        });
+    });
+});

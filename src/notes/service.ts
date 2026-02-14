@@ -3,7 +3,7 @@ import { Helper } from "../utils/helper";
 import { NotesConstants } from "./constants";
 import { NotesError } from "./errors";
 import { INotesRepo } from "./repo";
-import { Note, NoteResult, NotesDetailedResult } from "./types";
+import { Note, NoteResult, NotesDetailedResult, NotesLogger } from "./types";
 import { promises as fs } from "node:fs";
 import { InternalError, NotFoundError } from "../middleware/errors";
 
@@ -11,18 +11,29 @@ class NotesRepo implements INotesRepo {
     private isNotesInitialised: boolean = false;
     private notes: Map<string, Note> = new Map<string, Note>();
     private writeLock: Promise<void> = Promise.resolve();
-    private async doAtomicWrite(content: NoteResult[]) {
+    private async doAtomicWrite(
+        content: NoteResult[] | NotesLogger[],
+        tempFilePath?: string,
+        filePath?: string,
+    ) {
         await fs.writeFile(
-            NotesConstants.tempFilePath,
+            tempFilePath ?? NotesConstants.tempFilePath,
             JSON.stringify(content, null, 2),
             NotesConstants.fileEncoding,
         );
-        await fs.rename(NotesConstants.tempFilePath, NotesConstants.filePath);
+        await fs.rename(
+            tempFilePath ?? NotesConstants.tempFilePath,
+            filePath ?? NotesConstants.filePath,
+        );
     }
 
-    private persist(content: NoteResult[]): Promise<void> {
+    private persist(
+        content: NoteResult[] | NotesLogger[],
+        tempFilePath?: string,
+        filePath?: string,
+    ): Promise<void> {
         const run = async () => {
-            await this.doAtomicWrite(content);
+            await this.doAtomicWrite(content, tempFilePath, filePath);
         };
         this.writeLock = this.writeLock.then(run, run);
 
@@ -38,19 +49,22 @@ class NotesRepo implements INotesRepo {
         if (!fileExists) {
             await fs.writeFile(
                 NotesConstants.filePath,
-                JSON.stringify(NotesConstants.dummyNote, null, 2),
+                NotesConstants.dummyNote,
                 NotesConstants.fileEncoding,
             );
         }
-        const parsedString: NoteResult[] = await Helper.fetchFileContent();
+        const parsedString: NoteResult[] =
+            await Helper.fetchFileContent<NoteResult>();
 
         if (Array.isArray(parsedString)) {
-            for (let index = 0; index < parsedString.length; index += 1) {
-                if (Helper.isEitherNullOrUndefined(parsedString[index]))
-                    throw new Error(NotesError.invalidContentInDB);
-                const obj: NoteResult = parsedString[index]!;
-                const { id, ...note } = obj;
-                this.notes.set(id, note);
+            if (parsedString.length) {
+                for (let index = 0; index < parsedString.length; index += 1) {
+                    if (Helper.isEitherNullOrUndefined(parsedString[index]))
+                        throw new Error(NotesError.invalidContentInDB);
+                    const obj: NoteResult = parsedString[index]!;
+                    const { id, ...note } = obj;
+                    this.notes.set(id, note);
+                }
             }
         } else {
             throw new Error(NotesError.invalidContentInDB);
@@ -97,18 +111,17 @@ class NotesRepo implements INotesRepo {
     async list(limit: number, offset: number): Promise<NotesDetailedResult> {
         this.assertInit();
 
-        if (!(this.notes.size - 1)) throw new NotFoundError();
+        if (!this.notes.size) throw new NotFoundError();
         const all = Array.from(this.notes.entries()).map(([id, n]) => ({
             id,
             ...n,
         }));
         all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        all.pop();
         const items = all.slice(offset, offset + limit);
 
         return {
             items,
-            total: this.notes.size - 1,
+            total: this.notes.size,
             limit: Math.min(limit, 50),
             offset: offset,
         };
@@ -139,6 +152,18 @@ class NotesRepo implements INotesRepo {
         await this.persist(Helper.fetchMapContentInFileFormat(this.notes));
 
         return true;
+    }
+
+    async writeInFile(
+        content: NotesLogger,
+        tempFilePath?: string,
+        filePath?: string,
+    ): Promise<void> {
+        const fetchLogs: NotesLogger[] =
+            await Helper.fetchFileContent<NotesLogger>(filePath);
+        fetchLogs.push(content);
+
+        this.persist(fetchLogs, tempFilePath, filePath);
     }
 }
 

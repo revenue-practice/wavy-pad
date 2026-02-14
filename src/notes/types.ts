@@ -22,3 +22,11 @@ export type NotesDetailedResult = {
     limit?: number;
     offset?: number;
 };
+
+export type NotesLogger = {
+    method: string;
+    url: string;
+    statusCode: number;
+    responseTime: string;
+    rid: string;
+};
