@@ -7,13 +7,7 @@ import {
     validateNoteId,
     validateNotePagination,
 } from "./validate";
-import {
-    remove,
-    list,
-    get,
-    create,
-    update,
-} from "./store";
+import { remove, list, get, create, update } from "./store";
 
 export const router = express.Router();
 

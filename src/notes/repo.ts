@@ -8,4 +8,4 @@ export interface INotesRepo {
     list(limit: number, offset: number): Promise<NotesDetailedResult>;
     update(title: string, body: string, id: string): Promise<NoteResult>;
     remove(id: string): Promise<boolean>;
-};
+}
