@@ -73,7 +73,7 @@ class NotesRepo implements INotesRepo {
         this.isNotesInitialised = true;
     }
 
-    async assertInit() {
+    assertInit() {
         if (!this.isNotesInitialised) throw new InternalError();
         return this.isNotesInitialised;
     }
@@ -131,8 +131,7 @@ class NotesRepo implements INotesRepo {
         this.assertInit();
         if (!this.notes.has(id)) throw new NotFoundError();
 
-        const note: NoteResult = {
-            id: id,
+        const note: Note = {
             title: title,
             body: body,
             createdAt: this.notes.get(id)!.createdAt,
@@ -141,7 +140,7 @@ class NotesRepo implements INotesRepo {
         this.notes.set(id, note);
         await this.persist(Helper.fetchMapContentInFileFormat(this.notes));
 
-        return note;
+        return { id: id, ...note };
     }
 
     async remove(id: string): Promise<boolean> {
@@ -163,7 +162,7 @@ class NotesRepo implements INotesRepo {
             await Helper.fetchFileContent<NotesLogger>(filePath);
         fetchLogs.push(content);
 
-        this.persist(fetchLogs, tempFilePath, filePath);
+        await this.persist(fetchLogs, tempFilePath, filePath);
     }
 }
 
