@@ -131,12 +131,13 @@ class NotesRepo implements INotesRepo {
             ...n,
         }));
         const filterByUser = all.filter((val) => val.userId === userId);
-        filterByUser.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        const items = filterByUser.slice(offset, offset + limit);
+        const sortUserNotes = filterByUser;
+        sortUserNotes.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        const items = sortUserNotes.slice(offset, offset + limit);
 
         return {
             items,
-            total: this.notes.size,
+            total: filterByUser.length,
             limit: Math.min(limit, 50),
             offset: offset,
         };

@@ -41,6 +41,16 @@ export const mockNote6 = {
     body: "Total abstinence from sexual feelings.",
 };
 
+export const mockNote7 = {
+    title: "Mental Discipline",
+    body: "Be brave enough to defy laws",
+};
+
+export const mockNote8 = {
+    title: "Production bugs",
+    body: "Catch error using logs",
+};
+
 export const invalidJsonString: string =
     '{"title": "Physical Discipline", "body": "Total abstinence"';
 export const missingTitleNote = {
@@ -68,5 +78,6 @@ export const mockNoteParams = {
 
 export const mockHeaders = {
     userId: "x-user-id",
-    userIdHeader: "dfr-ankit008379",
+    user1IdHeader: "dfr-ankit008379",
+    user2IdHeader: "sxe-shreya12806",
 };

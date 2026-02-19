@@ -20,6 +20,8 @@ import {
     mockNote2,
     mockNote3,
     mockNote4,
+    mockNote7,
+    mockNote8,
 } from "./mock-data";
 import { Constants } from "../src/utils/constants";
 
@@ -48,7 +50,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Success: Insert Data[note_1]", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(mockNote1);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
@@ -59,7 +61,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Success: Insert Data[note_2]", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(mockNote2);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
@@ -70,7 +72,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Success: Insert Data[note_3]", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(mockNote3);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
@@ -78,11 +80,33 @@ describe("POST: /notes [Insert data]", () => {
         expect(response.body).toMatchObject(mockNote3);
     });
 
+    it("Success: Insert Data[note_7]", async () => {
+        const response = await request(app)
+            .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.user2IdHeader)
+            .send(mockNote7);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toMatchObject(mockNote7);
+    });
+
+    it("Success: Insert Data[note_8]", async () => {
+        const response = await request(app)
+            .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.user2IdHeader)
+            .send(mockNote8);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toMatchObject(mockNote8);
+    });
+
     it("Error: Invalid JSON", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
             .set("Content-Type", "application/json")
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(invalidJsonString); // missing closing }
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -93,7 +117,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Error: Missing title", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(missingTitleNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -106,7 +130,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Error: Missing body", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(missingBodyNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -119,7 +143,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Error: Title length > 80", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(lengthyTitleNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -132,13 +156,24 @@ describe("POST: /notes [Insert data]", () => {
     it("Error: Body length > 2000", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(lengthyBodyNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: NotesError.invalidBodyLength, field: NotesError.body },
+        ]);
+    });
+
+    it("Error: Unauthorised", async () => {
+        const response = await request(app)
+            .post(NotesRoutes.getDefaultRoute())
+            .send(mockNote1);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[401]);
+        expect(response.body).toStrictEqual([
+            { message: ErrorConstants.unauthorised },
         ]);
     });
 });
@@ -165,13 +200,24 @@ describe("GET: /:id [Fetch note via id]", () => {
     it("Error: Not Found", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}/note_4`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send({});
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: ErrorConstants.notFound },
+        ]);
+    });
+
+    it("Error: Unauthorised", async () => {
+        const response = await request(app)
+            .get(`${NotesRoutes.getDefaultRoute()}/note_4`)
+            .send({});
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[401]);
+        expect(response.body).toStrictEqual([
+            { message: ErrorConstants.unauthorised },
         ]);
     });
 });
@@ -195,10 +241,10 @@ describe("GET: / [List Notes]", () => {
         delete process.env.FOLDER_PATH;
     });
 
-    it("Success: Fetch List", async () => {
+    it("Success: Fetch List user 1", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send({});
 
         expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
@@ -211,10 +257,26 @@ describe("GET: / [List Notes]", () => {
         });
     });
 
-    it("Success: Fetch List [Limit 1]", async () => {
+    it("Success: Fetch List user 2", async () => {
+        const response = await request(app)
+            .get(`${NotesRoutes.getDefaultRoute()}`)
+            .set(mockHeaders.userId, mockHeaders.user2IdHeader)
+            .send({});
+
+        expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toMatchObject({
+            items: [mockNote8, mockNote7],
+            total: 2,
+            limit: 20,
+            offset: 0,
+        });
+    });
+
+    it("Success: Fetch List [Limit 1] user 1", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}?limit=1`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send({});
 
         expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
@@ -227,10 +289,26 @@ describe("GET: / [List Notes]", () => {
         });
     });
 
-    it("Success: Fetch List [Limit 1 Offset 1]", async () => {
+    it("Success: Fetch List [Limit 1] user 2", async () => {
+        const response = await request(app)
+            .get(`${NotesRoutes.getDefaultRoute()}?limit=1`)
+            .set(mockHeaders.userId, mockHeaders.user2IdHeader)
+            .send({});
+
+        expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
+        expect(response.headers["x-request-id"]).toBeTruthy();
+        expect(response.body).toMatchObject({
+            items: [mockNote8],
+            total: 2,
+            limit: 1,
+            offset: 0,
+        });
+    });
+
+    it("Success: Fetch List [Limit 1 Offset 1] user 1", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}?limit=1&offset=1`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send({});
 
         expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
@@ -241,6 +319,17 @@ describe("GET: / [List Notes]", () => {
             limit: 1,
             offset: 1,
         });
+    });
+
+    it("Error: Unauthorised", async () => {
+        const response = await request(app)
+            .get(`${NotesRoutes.getDefaultRoute()}?limit=1&offset=1`)
+            .send({});
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[401]);
+        expect(response.body).toStrictEqual([
+            { message: ErrorConstants.unauthorised },
+        ]);
     });
 });
 
@@ -266,7 +355,7 @@ describe("Update notes validation", () => {
     it("Error: Not Found", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/note_4`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(mockNote4);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);
@@ -279,7 +368,7 @@ describe("Update notes validation", () => {
     it("Error: Missing title", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(missingTitleNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -292,7 +381,7 @@ describe("Update notes validation", () => {
     it("Error: Missing body", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(missingBodyNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -305,7 +394,7 @@ describe("Update notes validation", () => {
     it("Error: Title length > 80", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(lengthyTitleNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -318,13 +407,24 @@ describe("Update notes validation", () => {
     it("Error: Body length > 2000", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send(lengthyBodyNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: NotesError.invalidBodyLength, field: NotesError.body },
+        ]);
+    });
+
+    it("Error: Unauthorised", async () => {
+        const response = await request(app)
+            .put(`${NotesRoutes.getDefaultRoute()}/123`)
+            .send(lengthyBodyNote);
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[401]);
+        expect(response.body).toStrictEqual([
+            { message: ErrorConstants.unauthorised },
         ]);
     });
 });
@@ -348,16 +448,27 @@ describe("Delete notes validation", () => {
         delete process.env.FOLDER_PATH;
     });
 
-    it("Failure validation", async () => {
+    it("Error: Validation", async () => {
         const response = await request(app)
             .delete(`${NotesRoutes.getDefaultRoute()}/123`)
-            .set(mockHeaders.userId, mockHeaders.userIdHeader)
+            .set(mockHeaders.userId, mockHeaders.user1IdHeader)
             .send({});
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);
         expect(response.headers["x-request-id"]).toBeTruthy();
         expect(response.body).toStrictEqual([
             { message: ErrorConstants.notFound },
+        ]);
+    });
+
+    it("Error: Unauthorised", async () => {
+        const response = await request(app)
+            .delete(`${NotesRoutes.getDefaultRoute()}/123`)
+            .send({});
+
+        expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[401]);
+        expect(response.body).toStrictEqual([
+            { message: ErrorConstants.unauthorised },
         ]);
     });
 });
