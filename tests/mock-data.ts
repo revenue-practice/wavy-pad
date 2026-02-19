@@ -2,12 +2,12 @@ import { NoteResult } from "../src/notes/types";
 
 export const dummyNote: NoteResult = {
     id: "AAA",
+    userId: "AAAA",
     title: "AAA",
     body: "AAA",
     createdAt: "...",
     updatedAt: "...",
 };
-
 /* -----------------------------
    INPUT PARAM MOCKS (API calls)
 -------------------------------- */
@@ -41,6 +41,16 @@ export const mockNote6 = {
     body: "Total abstinence from sexual feelings.",
 };
 
+export const mockNote7 = {
+    title: "Mental Discipline",
+    body: "Be brave enough to defy laws",
+};
+
+export const mockNote8 = {
+    title: "Production bugs",
+    body: "Catch error using logs",
+};
+
 export const invalidJsonString: string =
     '{"title": "Physical Discipline", "body": "Total abstinence"';
 export const missingTitleNote = {
@@ -64,4 +74,10 @@ export const lengthyBodyNote = {
 export const mockNoteParams = {
     title: "API validation checklist (updated)",
     body: "All incoming requests must be validated at the router boundary using Zod.",
+};
+
+export const mockHeaders = {
+    userId: "x-user-id",
+    user1IdHeader: "dfr-ankit008379",
+    user2IdHeader: "sxe-shreya12806",
 };

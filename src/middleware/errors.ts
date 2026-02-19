@@ -29,6 +29,18 @@ export class ValidationError extends CustomError {
     }
 }
 
+export class UnauthorisedError extends CustomError {
+    constructor() {
+        super();
+        Object.setPrototypeOf(this, UnauthorisedError.prototype);
+    }
+
+    statusCode = 401;
+    formatErrors(): CustomErrorStructure[] {
+        return [{ message: ErrorConstants.unauthorised }];
+    }
+}
+
 export class InvalidJson extends CustomError {
     constructor() {
         super();
