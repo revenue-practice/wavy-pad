@@ -57,15 +57,13 @@ class NotesRepo implements INotesRepo {
             await Helper.fetchFileContent<NoteResult>();
 
         if (Array.isArray(parsedString)) {
-            if (parsedString.length) {
-                for (let index = 0; index < parsedString.length; index += 1) {
-                    const obj: NoteResult | undefined = parsedString[index];
-                    if (Helper.isEitherNullOrUndefined(obj))
-                        throw new Error(NotesError.invalidContentInDB);
+            for (let index = 0; index < parsedString.length; index += 1) {
+                const obj: NoteResult | undefined = parsedString[index];
+                if (Helper.isEitherNullOrUndefined(obj))
+                    throw new Error(NotesError.invalidContentInDB);
 
-                    const { id, ...note } = obj;
-                    this.notes.set(id, note);
-                }
+                const { id, ...note } = obj;
+                this.notes.set(id, note);
             }
         } else {
             throw new Error(NotesError.invalidContentInDB);
@@ -125,19 +123,18 @@ class NotesRepo implements INotesRepo {
     ): Promise<NotesDetailedResult> {
         this.assertInit();
 
-        if (!this.notes.size) throw new NotFoundError();
         const all = Array.from(this.notes.entries()).map(([id, n]) => ({
             id,
             ...n,
         }));
-        const filterByUser = all.filter((val) => val.userId === userId);
-        const sortUserNotes = filterByUser;
-        sortUserNotes.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        const items = sortUserNotes.slice(offset, offset + limit);
+        const itemsAllUsers = all.filter((n) => n.userId === userId);
+
+        itemsAllUsers.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        const items = itemsAllUsers.slice(offset, offset + limit);
 
         return {
             items,
-            total: filterByUser.length,
+            total: itemsAllUsers.length,
             limit: Math.min(limit, 50),
             offset: offset,
         };

@@ -11,39 +11,28 @@ import {
     mockNoteParams,
 } from "./mock-data";
 import { NoteResult } from "../src/notes/types";
-import { initiateDB } from "../src/db";
-import path from "node:path";
-import os from "node:os";
-import { promises as fs } from "node:fs";
-
-const notesDataPath: string = "notes-data";
-const loggerFolderPath: string = "notes-logger";
+import { afterEachHelper, beforeEachHelper } from "./helper";
 
 describe("POST: /notes [Insert data [note_1] queue test]", () => {
-    let tempDir: string, logTempDir: string;
+    let ctx: { tempDir: string; logTempDir: string };
     const fixedTime = "2026-02-13T10:10:20.000Z";
 
     beforeEach(async () => {
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
-        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+        ctx = await beforeEachHelper();
 
         vi.useFakeTimers();
         vi.setSystemTime(new Date(fixedTime));
-
-        process.env.FOLDER_PATH = tempDir;
-        process.env.LOGGER_PATH = logTempDir;
-        await initiateDB();
     });
 
     afterEach(async () => {
-        await fs.rm(tempDir, { recursive: true, force: true });
-        delete process.env.FOLDER_PATH;
+        await afterEachHelper(ctx);
+
         vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
         await notesRepo.create(
-            mockHeaders.userIdHeader,
+            mockHeaders.user1IdHeader,
             mockNote1.title,
             mockNote1.body,
         );
@@ -51,30 +40,25 @@ describe("POST: /notes [Insert data [note_1] queue test]", () => {
 });
 
 describe("POST: /notes [Insert data [note_2] queue test]", () => {
-    let tempDir: string, logTempDir: string;
+    let ctx: { tempDir: string; logTempDir: string };
     const fixedTime = "2026-02-13T10:12:20.000Z";
 
     beforeEach(async () => {
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
-        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
+        ctx = await beforeEachHelper();
 
         vi.useFakeTimers();
         vi.setSystemTime(new Date(fixedTime));
-
-        process.env.FOLDER_PATH = tempDir;
-        process.env.LOGGER_PATH = logTempDir;
-        await initiateDB();
     });
 
     afterEach(async () => {
-        await fs.rm(tempDir, { recursive: true, force: true });
-        delete process.env.FOLDER_PATH;
+        await afterEachHelper(ctx);
+
         vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
         await notesRepo.create(
-            mockHeaders.userIdHeader,
+            mockHeaders.user1IdHeader,
             mockNote2.title,
             mockNote2.body,
         );
@@ -83,29 +67,24 @@ describe("POST: /notes [Insert data [note_2] queue test]", () => {
 
 describe("POST: /notes [create]", () => {
     const fixedTime = "2026-02-01T02:12:20.000Z";
-    let tempDir: string, logTempDir: string;
+    let ctx: { tempDir: string; logTempDir: string };
 
     beforeEach(async () => {
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
-        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
-        process.env.FOLDER_PATH = tempDir;
-        process.env.LOGGER_PATH = logTempDir;
-
-        await initiateDB();
+        ctx = await beforeEachHelper();
 
         vi.useFakeTimers();
         vi.setSystemTime(new Date(fixedTime));
     });
 
     afterEach(async () => {
-        await fs.rm(tempDir, { recursive: true, force: true });
-        delete process.env.FOLDER_PATH;
+        await afterEachHelper(ctx);
+
         vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
         const response: NoteResult = await notesRepo.create(
-            mockHeaders.userIdHeader,
+            mockHeaders.user1IdHeader,
             mockNoteParams.title,
             mockNoteParams.body,
         );
@@ -120,24 +99,18 @@ describe("POST: /notes [create]", () => {
 });
 
 describe("GET: / [list]", () => {
-    let tempDir: string, logTempDir: string;
+    let ctx: { tempDir: string; logTempDir: string };
 
     beforeEach(async () => {
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
-        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
-        process.env.FOLDER_PATH = tempDir;
-        process.env.LOGGER_PATH = logTempDir;
-
-        await initiateDB();
+        ctx = await beforeEachHelper();
     });
 
     afterEach(async () => {
-        await fs.rm(tempDir, { recursive: true, force: true });
-        delete process.env.FOLDER_PATH;
+        await afterEachHelper(ctx);
     });
 
     it("Success: Empty List", async () => {
-        const response = await notesRepo.list(mockHeaders.userIdHeader, 1, 3);
+        const response = await notesRepo.list(mockHeaders.user1IdHeader, 1, 3);
 
         expect(response).toMatchObject({
             items: [],
@@ -148,7 +121,7 @@ describe("GET: / [list]", () => {
     });
 
     it("Success: Data in List", async () => {
-        const response = await notesRepo.list(mockHeaders.userIdHeader, 5, 2);
+        const response = await notesRepo.list(mockHeaders.user1IdHeader, 5, 2);
 
         expect(response).toMatchObject({
             items: [
@@ -164,7 +137,7 @@ describe("GET: / [list]", () => {
     });
 
     it("Success: Queue Data", async () => {
-        const response = await notesRepo.list(mockHeaders.userIdHeader, 5, 0);
+        const response = await notesRepo.list(mockHeaders.user1IdHeader, 5, 0);
 
         expect(response).toMatchObject({
             items: [
@@ -189,45 +162,40 @@ describe("GET: / [list]", () => {
 });
 
 describe("POST: /notes [Insert data notes concurrency test]", () => {
-    let tempDir: string, logTempDir: string;
+    let ctx: { tempDir: string; logTempDir: string };
     const fixedTime = "2026-02-15T10:11:11.111Z";
 
     beforeEach(async () => {
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
-        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
-        process.env.FOLDER_PATH = tempDir;
-        process.env.LOGGER_PATH = logTempDir;
+        ctx = await beforeEachHelper();
 
         vi.useFakeTimers();
         vi.setSystemTime(new Date(fixedTime));
-
-        await initiateDB();
     });
 
     afterEach(async () => {
-        await fs.rm(tempDir, { recursive: true, force: true });
-        delete process.env.FOLDER_PATH;
+        await afterEachHelper(ctx);
+
         vi.useRealTimers();
     });
 
     it("Success: Insert Data", async () => {
         await notesRepo.create(
-            mockHeaders.userIdHeader,
+            mockHeaders.user1IdHeader,
             mockNote3.title,
             mockNote3.body,
         );
         await notesRepo.create(
-            mockHeaders.userIdHeader,
+            mockHeaders.user1IdHeader,
             mockNote4.title,
             mockNote4.body,
         );
         await notesRepo.create(
-            mockHeaders.userIdHeader,
+            mockHeaders.user1IdHeader,
             mockNote5.title,
             mockNote5.body,
         );
         await notesRepo.create(
-            mockHeaders.userIdHeader,
+            mockHeaders.user1IdHeader,
             mockNote6.title,
             mockNote6.body,
         );
@@ -235,24 +203,18 @@ describe("POST: /notes [Insert data notes concurrency test]", () => {
 });
 
 describe("GET: / [list]", () => {
-    let tempDir: string, logTempDir: string;
+    let ctx: { tempDir: string; logTempDir: string };
 
     beforeEach(async () => {
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), notesDataPath));
-        logTempDir = await fs.mkdtemp(path.join(os.tmpdir(), loggerFolderPath));
-        process.env.FOLDER_PATH = tempDir;
-        process.env.LOGGER_PATH = logTempDir;
-
-        await initiateDB();
+        ctx = await beforeEachHelper();
     });
 
     afterEach(async () => {
-        await fs.rm(tempDir, { recursive: true, force: true });
-        delete process.env.FOLDER_PATH;
+        await afterEachHelper(ctx);
     });
 
     it("Success: Concurrent Data", async () => {
-        const response = await notesRepo.list(mockHeaders.userIdHeader, 10, 0);
+        const response = await notesRepo.list(mockHeaders.user1IdHeader, 10, 0);
 
         expect(response).toEqual({
             items: expect.arrayContaining([
