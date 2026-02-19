@@ -10,6 +10,7 @@ export type NoteRequest = Request<{}, unknown, NoteRequestBody>; // eslint-disab
 export type Note = NoteRequestBody & {
     createdAt: string;
     updatedAt: string;
+    userId: string;
 };
 
 export type NoteResult = Note & {

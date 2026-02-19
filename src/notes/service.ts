@@ -59,9 +59,10 @@ class NotesRepo implements INotesRepo {
         if (Array.isArray(parsedString)) {
             if (parsedString.length) {
                 for (let index = 0; index < parsedString.length; index += 1) {
-                    if (Helper.isEitherNullOrUndefined(parsedString[index]))
+                    const obj: NoteResult | undefined = parsedString[index];
+                    if (Helper.isEitherNullOrUndefined(obj))
                         throw new Error(NotesError.invalidContentInDB);
-                    const obj: NoteResult = parsedString[index]!;
+
                     const { id, ...note } = obj;
                     this.notes.set(id, note);
                 }
@@ -78,11 +79,16 @@ class NotesRepo implements INotesRepo {
         return this.isNotesInitialised;
     }
 
-    async create(title: string, body: string): Promise<NoteResult> {
+    async create(
+        userId: string,
+        title: string,
+        body: string,
+    ): Promise<NoteResult> {
         this.assertInit();
 
         const id: string = randomUUID();
         const note: Note = {
+            userId: userId,
             title: title,
             body: body,
             createdAt: new Date().toISOString(),
@@ -99,16 +105,24 @@ class NotesRepo implements INotesRepo {
         return { id: id, ...note };
     }
 
-    async get(id: string): Promise<NoteResult> {
+    async get(userId: string, id: string): Promise<NoteResult> {
         this.assertInit();
 
         const response: Note | undefined = this.notes.get(id);
-        if (Helper.isEitherNullOrUndefined(response)) throw new NotFoundError();
+        if (
+            Helper.isEitherNullOrUndefined(response) ||
+            response.userId !== userId
+        )
+            throw new NotFoundError();
 
         return { id: id, ...response };
     }
 
-    async list(limit: number, offset: number): Promise<NotesDetailedResult> {
+    async list(
+        userId: string,
+        limit: number,
+        offset: number,
+    ): Promise<NotesDetailedResult> {
         this.assertInit();
 
         if (!this.notes.size) throw new NotFoundError();
@@ -116,8 +130,9 @@ class NotesRepo implements INotesRepo {
             id,
             ...n,
         }));
-        all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        const items = all.slice(offset, offset + limit);
+        const filterByUser = all.filter((val) => val.userId === userId);
+        filterByUser.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        const items = filterByUser.slice(offset, offset + limit);
 
         return {
             items,
@@ -127,14 +142,25 @@ class NotesRepo implements INotesRepo {
         };
     }
 
-    async update(title: string, body: string, id: string): Promise<NoteResult> {
+    async update(
+        userId: string,
+        title: string,
+        body: string,
+        id: string,
+    ): Promise<NoteResult> {
         this.assertInit();
-        if (!this.notes.has(id)) throw new NotFoundError();
+        const existingNote: Note | undefined = this.notes.get(id);
+        if (
+            Helper.isEitherNullOrUndefined(existingNote) ||
+            existingNote.userId !== userId
+        )
+            throw new NotFoundError();
 
         const note: Note = {
+            userId: userId,
             title: title,
             body: body,
-            createdAt: this.notes.get(id)!.createdAt,
+            createdAt: existingNote.createdAt,
             updatedAt: new Date().toISOString(),
         };
         this.notes.set(id, note);
@@ -143,9 +169,14 @@ class NotesRepo implements INotesRepo {
         return { id: id, ...note };
     }
 
-    async remove(id: string): Promise<boolean> {
+    async remove(userId: string, id: string): Promise<boolean> {
         this.assertInit();
-        if (!this.notes.has(id)) throw new NotFoundError();
+        const existingNote: Note | undefined = this.notes.get(id);
+        if (
+            Helper.isEitherNullOrUndefined(existingNote) ||
+            existingNote.userId !== userId
+        )
+            throw new NotFoundError();
 
         this.notes.delete(id);
         await this.persist(Helper.fetchMapContentInFileFormat(this.notes));

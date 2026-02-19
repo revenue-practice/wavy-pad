@@ -26,6 +26,7 @@ export class NotesConstants {
     }
 
     static fileEncoding = "utf8" as const;
+    static userIdHeader = "x-user-id" as const;
 
     public static dummyNote: string = "[]";
 }
