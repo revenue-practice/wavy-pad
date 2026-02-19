@@ -1,6 +1,7 @@
 import { describe, beforeEach, afterEach, it, vi, expect } from "vitest";
 import { notesRepo } from "../src/notes/service";
 import {
+    mockHeaders,
     mockNote1,
     mockNote2,
     mockNote3,
@@ -41,7 +42,11 @@ describe("POST: /notes [Insert data [note_1] queue test]", () => {
     });
 
     it("Success: Insert Data", async () => {
-        await notesRepo.create(mockNote1.title, mockNote1.body);
+        await notesRepo.create(
+            mockHeaders.userIdHeader,
+            mockNote1.title,
+            mockNote1.body,
+        );
     });
 });
 
@@ -68,7 +73,11 @@ describe("POST: /notes [Insert data [note_2] queue test]", () => {
     });
 
     it("Success: Insert Data", async () => {
-        await notesRepo.create(mockNote2.title, mockNote2.body);
+        await notesRepo.create(
+            mockHeaders.userIdHeader,
+            mockNote2.title,
+            mockNote2.body,
+        );
     });
 });
 
@@ -96,6 +105,7 @@ describe("POST: /notes [create]", () => {
 
     it("Success: Insert Data", async () => {
         const response: NoteResult = await notesRepo.create(
+            mockHeaders.userIdHeader,
             mockNoteParams.title,
             mockNoteParams.body,
         );
@@ -127,7 +137,7 @@ describe("GET: / [list]", () => {
     });
 
     it("Success: Empty List", async () => {
-        const response = await notesRepo.list(1, 3);
+        const response = await notesRepo.list(mockHeaders.userIdHeader, 1, 3);
 
         expect(response).toMatchObject({
             items: [],
@@ -138,7 +148,7 @@ describe("GET: / [list]", () => {
     });
 
     it("Success: Data in List", async () => {
-        const response = await notesRepo.list(5, 2);
+        const response = await notesRepo.list(mockHeaders.userIdHeader, 5, 2);
 
         expect(response).toMatchObject({
             items: [
@@ -154,7 +164,7 @@ describe("GET: / [list]", () => {
     });
 
     it("Success: Queue Data", async () => {
-        const response = await notesRepo.list(5, 0);
+        const response = await notesRepo.list(mockHeaders.userIdHeader, 5, 0);
 
         expect(response).toMatchObject({
             items: [
@@ -201,10 +211,26 @@ describe("POST: /notes [Insert data notes concurrency test]", () => {
     });
 
     it("Success: Insert Data", async () => {
-        await notesRepo.create(mockNote3.title, mockNote3.body);
-        await notesRepo.create(mockNote4.title, mockNote4.body);
-        await notesRepo.create(mockNote5.title, mockNote5.body);
-        await notesRepo.create(mockNote6.title, mockNote6.body);
+        await notesRepo.create(
+            mockHeaders.userIdHeader,
+            mockNote3.title,
+            mockNote3.body,
+        );
+        await notesRepo.create(
+            mockHeaders.userIdHeader,
+            mockNote4.title,
+            mockNote4.body,
+        );
+        await notesRepo.create(
+            mockHeaders.userIdHeader,
+            mockNote5.title,
+            mockNote5.body,
+        );
+        await notesRepo.create(
+            mockHeaders.userIdHeader,
+            mockNote6.title,
+            mockNote6.body,
+        );
     });
 });
 
@@ -226,7 +252,7 @@ describe("GET: / [list]", () => {
     });
 
     it("Success: Concurrent Data", async () => {
-        const response = await notesRepo.list(10, 0);
+        const response = await notesRepo.list(mockHeaders.userIdHeader, 10, 0);
 
         expect(response).toEqual({
             items: expect.arrayContaining([

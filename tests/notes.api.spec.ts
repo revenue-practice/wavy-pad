@@ -15,6 +15,7 @@ import {
     lengthyTitleNote,
     missingBodyNote,
     missingTitleNote,
+    mockHeaders,
     mockNote1,
     mockNote2,
     mockNote3,
@@ -47,6 +48,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Success: Insert Data[note_1]", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(mockNote1);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
@@ -57,6 +59,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Success: Insert Data[note_2]", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(mockNote2);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
@@ -67,6 +70,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Success: Insert Data[note_3]", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(mockNote3);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[201]);
@@ -78,6 +82,7 @@ describe("POST: /notes [Insert data]", () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
             .set("Content-Type", "application/json")
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(invalidJsonString); // missing closing }
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -88,6 +93,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Error: Missing title", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(missingTitleNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -100,6 +106,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Error: Missing body", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(missingBodyNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -112,6 +119,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Error: Title length > 80", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(lengthyTitleNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -124,6 +132,7 @@ describe("POST: /notes [Insert data]", () => {
     it("Error: Body length > 2000", async () => {
         const response = await request(app)
             .post(NotesRoutes.getDefaultRoute())
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(lengthyBodyNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -156,6 +165,7 @@ describe("GET: /:id [Fetch note via id]", () => {
     it("Error: Not Found", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}/note_4`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send({});
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);
@@ -188,6 +198,7 @@ describe("GET: / [List Notes]", () => {
     it("Success: Fetch List", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send({});
 
         expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
@@ -203,6 +214,7 @@ describe("GET: / [List Notes]", () => {
     it("Success: Fetch List [Limit 1]", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}?limit=1`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send({});
 
         expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
@@ -218,6 +230,7 @@ describe("GET: / [List Notes]", () => {
     it("Success: Fetch List [Limit 1 Offset 1]", async () => {
         const response = await request(app)
             .get(`${NotesRoutes.getDefaultRoute()}?limit=1&offset=1`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send({});
 
         expect(response.status).toStrictEqual(Constants.STATUS_CODES[200]);
@@ -253,6 +266,7 @@ describe("Update notes validation", () => {
     it("Error: Not Found", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/note_4`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(mockNote4);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);
@@ -265,6 +279,7 @@ describe("Update notes validation", () => {
     it("Error: Missing title", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(missingTitleNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -277,6 +292,7 @@ describe("Update notes validation", () => {
     it("Error: Missing body", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(missingBodyNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -289,6 +305,7 @@ describe("Update notes validation", () => {
     it("Error: Title length > 80", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(lengthyTitleNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -301,6 +318,7 @@ describe("Update notes validation", () => {
     it("Error: Body length > 2000", async () => {
         const response = await request(app)
             .put(`${NotesRoutes.getDefaultRoute()}/123`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send(lengthyBodyNote);
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[400]);
@@ -333,6 +351,7 @@ describe("Delete notes validation", () => {
     it("Failure validation", async () => {
         const response = await request(app)
             .delete(`${NotesRoutes.getDefaultRoute()}/123`)
+            .set(mockHeaders.userId, mockHeaders.userIdHeader)
             .send({});
 
         expect(response.statusCode).toStrictEqual(Constants.STATUS_CODES[404]);

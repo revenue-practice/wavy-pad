@@ -2,12 +2,12 @@ import { NoteResult } from "../src/notes/types";
 
 export const dummyNote: NoteResult = {
     id: "AAA",
+    userId: "AAAA",
     title: "AAA",
     body: "AAA",
     createdAt: "...",
     updatedAt: "...",
 };
-
 /* -----------------------------
    INPUT PARAM MOCKS (API calls)
 -------------------------------- */
@@ -64,4 +64,9 @@ export const lengthyBodyNote = {
 export const mockNoteParams = {
     title: "API validation checklist (updated)",
     body: "All incoming requests must be validated at the router boundary using Zod.",
+};
+
+export const mockHeaders = {
+    userId: "x-user-id",
+    userIdHeader: "dfr-ankit008379",
 };
