@@ -117,6 +117,7 @@ export class Helper {
         for (const [key, value] of notes) {
             const note = {
                 id: key,
+                userId: value.userId,
                 title: value.title,
                 body: value.body,
                 createdAt: value.createdAt,

@@ -40,7 +40,5 @@ export const loggingRouter = (
         );
     });
 
-    res.on("finish", () => {});
-
     next();
 };

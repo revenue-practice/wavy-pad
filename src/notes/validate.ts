@@ -2,7 +2,22 @@ import { Request, Response, NextFunction } from "express";
 import { RequestHandlerParams } from "../utils/types";
 import { Helper } from "../utils/helper";
 import { NotesError } from "./errors";
-import { ValidationError } from "../middleware/errors";
+import { UnauthorisedError, ValidationError } from "../middleware/errors";
+import { NotesConstants } from "./constants";
+
+export const validateUser: RequestHandlerParams = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    const userId: unknown = req.headers[NotesConstants.userIdHeader];
+    if (!Helper.isEmptyString(userId) && Helper.isValidString(userId)) {
+        req.userId = userId.trim();
+        next();
+    } else {
+        throw new UnauthorisedError();
+    }
+};
 
 export const validateNoteId: RequestHandlerParams = (
     req: Request,
@@ -15,7 +30,7 @@ export const validateNoteId: RequestHandlerParams = (
             { message: NotesError.invalidIdType, field: NotesError.id },
         ]);
 
-    req.noteId = rawId;
+    req.noteId = rawId.trim();
 
     next();
 };
