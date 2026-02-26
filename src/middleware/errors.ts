@@ -77,6 +77,23 @@ export class InternalError extends CustomError {
     }
 }
 
+export class InitialisationError extends CustomError {
+    constructor(public errors: CustomErrorStructure[]) {
+        super();
+        Object.setPrototypeOf(this, InitialisationError.prototype);
+    }
+
+    statusCode = 403;
+    formatErrors(): CustomErrorStructure[] {
+        return this.errors.map((err: CustomErrorStructure) => {
+            return {
+                message: ErrorConstants.initialisationError,
+                field: err.field,
+            };
+        });
+    }
+}
+
 export const errorHandler = (
     error: Error,
     _req: Request,

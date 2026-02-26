@@ -1,6 +1,10 @@
 import path from "node:path";
 
 export class NotesConstants {
+    static fileEncoding = "utf8" as const;
+    static userIdHeader = "x-user-id" as const;
+    static noNoteFound = "No note found" as const;
+
     static get folderPath(): string {
         return process.env.FOLDER_PATH ?? "data";
     }
@@ -24,9 +28,4 @@ export class NotesConstants {
     static get tempLoggerPath(): string {
         return path.join(this.loggerFolderPath, "logger.json.tmp");
     }
-
-    static fileEncoding = "utf8" as const;
-    static userIdHeader = "x-user-id" as const;
-
-    public static dummyNote: string = "[]";
 }

@@ -1,10 +1,7 @@
-import { NotesConstants } from "../notes/constants";
 import { NotesError } from "../notes/errors";
-import { Note, NoteResult } from "../notes/types";
 import { Constants } from "./constants";
 import { NullOrUndefined } from "./types";
-import { promises as fs } from "node:fs";
-
+import pool from "../models/pool";
 export class Helper {
     public static isNull(prop: unknown): prop is null {
         return prop === null;
@@ -83,67 +80,25 @@ export class Helper {
         return error instanceof Error ? error.message : fallback;
     }
 
-    /* eslint-disable */
-    public static async checkIfFileExists(prop: string): Promise<boolean> {
+    public static async executeQueryAsyncWithoutLock(query: string, queryParams?: unknown[]) {
         try {
-            await fs.access(prop, fs.constants.F_OK);
-        } catch (error) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public static isEntityParsable(prop: unknown): boolean {
-        try {
-            if (JSON.parse(prop as string)) {
+            const queryConfig = {
+                text: query,
+                queryTimeout: Constants.DB_TIMEOUTS.QUERY_TIMEOUT
             }
-        } catch (error) {
+
+            await pool.query(Constants.DB_COMMANDS.BEGIN);
+            const response = await pool.query(queryConfig, queryParams);
+            await pool.query(Constants.DB_COMMANDS.COMMIT);
+
+            return response;
+        }
+        catch (error) {
             const message: string = this.fetchErrorMessage(
                 error,
-                NotesError.fileDoNotExists,
+                NotesError.writeOperationFailure,
             );
-            console.error(message);
-            return false;
+            throw new Error(message);
         }
-        return true;
-    }
-
-    /* eslint-enable */
-    public static fetchMapContentInFileFormat(
-        notes: Map<string, Note>,
-    ): NoteResult[] {
-        const result: NoteResult[] = [];
-        for (const [key, value] of notes) {
-            const note = {
-                id: key,
-                userId: value.userId,
-                title: value.title,
-                body: value.body,
-                createdAt: value.createdAt,
-                updatedAt: value.updatedAt,
-            };
-
-            result.push(note);
-        }
-
-        return result;
-    }
-
-    public static async fetchFileContent<T>(filePath?: string): Promise<T[]> {
-        const response = await fs.readFile(
-            filePath ?? NotesConstants.filePath,
-            NotesConstants.fileEncoding,
-        );
-
-        if (!this.isEntityParsable(response))
-            throw new Error(NotesError.notesFileInitialisationFailure);
-
-        const fileContent: string = response as unknown as string;
-        const parsedString: T[] = JSON.parse(fileContent);
-
-        if (!Array.isArray(parsedString))
-            throw new Error(NotesError.invalidContentInDB);
-        return parsedString;
-    }
+    } 
 }

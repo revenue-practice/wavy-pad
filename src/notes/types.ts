@@ -13,6 +13,10 @@ export type Note = NoteRequestBody & {
     userId: string;
 };
 
+export type NoteEmptyResponse = {
+    message: string;
+};
+
 export type NoteResult = Note & {
     id: string;
 };

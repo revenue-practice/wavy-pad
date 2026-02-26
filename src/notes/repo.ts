@@ -1,10 +1,8 @@
-import { NoteResult, NotesDetailedResult } from "./types";
+import { NoteEmptyResponse, NoteResult, NotesDetailedResult } from "./types";
 
 export interface INotesRepo {
-    init(): Promise<void>;
-
     create(userId: string, title: string, body: string): Promise<NoteResult>;
-    get(userId: string, id: string): Promise<NoteResult>;
+    get(userId: string, id: string): Promise<NoteResult | NoteEmptyResponse>;
     list(
         userId: string,
         limit: number,

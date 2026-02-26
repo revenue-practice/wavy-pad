@@ -12,4 +12,21 @@ export class Constants {
         404: 404,
         500: 500,
     };
+
+    public static DB_TABLES = {
+        NOTES: "notes",
+    };
+
+    public static DB_COMMANDS = {
+        BEGIN: "BEGIN",
+        SELECT: "SELECT",
+        COMMIT: "COMMIT",
+        INSERT: "INSERT",
+        UPDATE: "UPDATE",
+        ROLLBACK: "ROLLBACK"
+    };
+
+    public static DB_TIMEOUTS = {
+        QUERY_TIMEOUT: 10000,
+    };
 }

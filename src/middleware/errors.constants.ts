@@ -4,4 +4,5 @@ export class ErrorConstants {
     public static unauthorised = "Unauthorized";
     public static notFound = "Not found";
     public static invalidJson = "Invalid Json";
+    public static initialisationError = "Error in initialisation";
 }
