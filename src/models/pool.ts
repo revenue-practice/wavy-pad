@@ -9,7 +9,7 @@ const pool = new Pool({
     port: Config.getDBPort(),
 });
 
-pool.on("error", (err, client) => {
+pool.on("error", (err) => {
     console.error("idle client error", err.message, err.stack);
 });
 

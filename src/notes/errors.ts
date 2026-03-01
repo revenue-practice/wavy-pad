@@ -11,11 +11,6 @@ export class NotesError {
         "Title length should be <= 80 characters";
     public static invalidBodyLength =
         "Body length should be <= 2000 characters";
-    public static notesFileInitialisationSuccess =
-        "Notes successfully initialised";
-    public static notesFileInitialisationFailure =
-        "Notes Initialisation failed";
     public static invalidContentInDB = "Invalid content in Notes DB";
-    public static fileDoNotExists = "File do not exists";
-    public static fileWriteOperationFailure = "Write operation in file failed";
+    public static writeOperationFailure = "Write operation in file failed";
 }

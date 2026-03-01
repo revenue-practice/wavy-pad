@@ -1,6 +1,3 @@
-import { InitialisationError } from "../middleware/errors";
-import { Helper } from "../utils/helper";
-
 export class Config {
     private static PORT: number = 3000;
     private static DEFAULT_ROUTE: string = "/";
