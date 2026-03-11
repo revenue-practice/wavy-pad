@@ -23,7 +23,7 @@ export class Constants {
         COMMIT: "COMMIT",
         INSERT: "INSERT",
         UPDATE: "UPDATE",
-        ROLLBACK: "ROLLBACK"
+        ROLLBACK: "ROLLBACK",
     };
 
     public static DB_TIMEOUTS = {

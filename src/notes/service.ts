@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { Helper } from "../utils/helper";
 import { INotesRepo } from "./repo";
-import { Note, NoteEmptyResponse, NoteResult, NotesDetailedResult } from "./types";
+import { Note, NoteResult, NotesDetailedResult } from "./types";
 import { Constants } from "../utils/constants";
-import { NotesConstants } from "./constants";
 import { NotFoundError } from "../middleware/errors";
 
 class NotesRepo implements INotesRepo {
@@ -22,17 +21,27 @@ class NotesRepo implements INotesRepo {
         };
 
         const query = `INSERT INTO ${Constants.DB_TABLES.NOTES} VALUES ($1, $2, $3, $4, $5, $6)`;
-        const queryParams = [note.id, note.title, note.body, note.createdAt, note.updatedAt, note.userId];
+        const queryParams = [
+            note.id,
+            note.title,
+            note.body,
+            note.createdAt,
+            note.updatedAt,
+            note.userId,
+        ];
 
         await Helper.executeQueryAsyncWithoutLock(query, queryParams);
         return note;
     }
 
-    async get(userId: string, id: string): Promise<NoteResult | NoteEmptyResponse> {
+    async get(userId: string, id: string): Promise<NoteResult> {
         const query = `SELECT id, user_id, title, body, created_at, updated_at from ${Constants.DB_TABLES.NOTES} WHERE id = $1 and user_id = $2`;
         const queryParams = [id, userId];
 
-        const response = await Helper.executeQueryAsyncWithoutLock(query, queryParams);
+        const response = await Helper.executeQueryAsyncWithoutLock(
+            query,
+            queryParams,
+        );
         if (response.rowCount) {
             const note: NoteResult = {
                 id: response.rows[0].id,
@@ -41,21 +50,25 @@ class NotesRepo implements INotesRepo {
                 createdAt: response.rows[0].created_at,
                 updatedAt: response.rows[0].updated_at,
                 userId: response.rows[0].user_id,
-            }
+            };
 
             return note;
         }
 
-        return { message: NotesConstants.noNoteFound }
+        throw new NotFoundError();
     }
 
     async list(
         userId: string,
         limit: number,
         offset: number,
-    ): Promise<NotesDetailedResult> {   
+    ): Promise<NotesDetailedResult> {
         const query = `SELECT id, user_id, title, body, created_at, updated_at from ${Constants.DB_TABLES.NOTES} user_id = $1 LIMIT $2 OFFSET $3`;
-        const response = await Helper.executeQueryAsyncWithoutLock(query, [userId, limit, offset]);
+        const response = await Helper.executeQueryAsyncWithoutLock(query, [
+            userId,
+            limit,
+            offset,
+        ]);
 
         return {
             items: response.rows,
@@ -72,9 +85,14 @@ class NotesRepo implements INotesRepo {
         id: string,
     ): Promise<NoteResult> {
         const query = `UPDATE ${Constants.DB_TABLES.NOTES} SET title = $1, body = $2, user_id = $3 WHERE id = $4`;
-        const response = await Helper.executeQueryAsyncWithoutLock(query, [title, body, userId, id]);
+        const response = await Helper.executeQueryAsyncWithoutLock(query, [
+            title,
+            body,
+            userId,
+            id,
+        ]);
 
-        if(!response.rowCount) throw new NotFoundError();
+        if (!response.rowCount) throw new NotFoundError();
 
         const note: Note = {
             userId: userId,
@@ -83,15 +101,18 @@ class NotesRepo implements INotesRepo {
             createdAt: response.rows[0].createdAt,
             updatedAt: new Date().toISOString(),
         };
-    
+
         return { id: id, ...note };
     }
 
     async remove(userId: string, id: string): Promise<boolean> {
         const query = `DELETE FROM ${Constants.DB_TABLES.NOTES} WHERE id = $1 and user_id = $2`;
-        const response = await Helper.executeQueryAsyncWithoutLock(query, [id, userId]);
+        const response = await Helper.executeQueryAsyncWithoutLock(query, [
+            id,
+            userId,
+        ]);
 
-        if(!response.rowCount) throw new NotFoundError();
+        if (!response.rowCount) throw new NotFoundError();
         return true;
     }
 }

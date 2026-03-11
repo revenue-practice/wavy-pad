@@ -2,6 +2,7 @@ import { NotesError } from "../notes/errors";
 import { Constants } from "./constants";
 import { NullOrUndefined } from "./types";
 import pool from "../models/pool";
+
 export class Helper {
     public static isNull(prop: unknown): prop is null {
         return prop === null;
@@ -80,25 +81,27 @@ export class Helper {
         return error instanceof Error ? error.message : fallback;
     }
 
-    public static async executeQueryAsyncWithoutLock(query: string, queryParams?: unknown[]) {
+    public static async executeQueryAsyncWithoutLock(
+        query: string,
+        queryParams?: unknown[],
+    ) {
         try {
             const queryConfig = {
                 text: query,
-                queryTimeout: Constants.DB_TIMEOUTS.QUERY_TIMEOUT
-            }
+                queryTimeout: Constants.DB_TIMEOUTS.QUERY_TIMEOUT,
+            };
 
             await pool.query(Constants.DB_COMMANDS.BEGIN);
             const response = await pool.query(queryConfig, queryParams);
             await pool.query(Constants.DB_COMMANDS.COMMIT);
 
             return response;
-        }
-        catch (error) {
+        } catch (error) {
             const message: string = this.fetchErrorMessage(
                 error,
                 NotesError.writeOperationFailure,
             );
             throw new Error(message);
         }
-    } 
+    }
 }
